@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DigiVote | Voter</title>
+  <link rel="stylesheet" href="voter.css"/>
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-straight/css/uicons-solid-straight.css">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow glow-voter"></div>
+
+  <!-- PROFILE DRAWER -->
+  <div class="profile-overlay" id="profile-overlay" onclick="handleOverlayClick(event)">
+    <div class="profile-drawer" id="profile-drawer">
+      <button class="drawer-close" onclick="closeProfile()">✕</button>
+      <div class="drawer-avatar" id="drawer-avatar">?</div>
+      <p class="drawer-name"    id="drawer-name">—</p>
+      <span class="drawer-role-badge">🗳️ Registered Voter</span>
+      <hr class="drawer-divider"/>
+      <div class="drawer-fields">
+        <div class="drawer-field">
+          <div class="df-icon">👤</div>
+          <div class="df-info">
+            <span class="df-label">Full Name</span>
+            <span class="df-val" id="df-name">—</span>
+          </div>
+        </div>
+        <div class="drawer-field">
+          <div class="df-icon">📱</div>
+          <div class="df-info">
+            <span class="df-label">Mobile</span>
+            <span class="df-val" id="df-phone">—</span>
+          </div>
+        </div>
+        <div class="drawer-field">
+          <div class="df-icon">🪪</div>
+          <div class="df-info">
+            <span class="df-label">Voter ID</span>
+            <span class="df-val" id="df-vid">—</span>
+          </div>
+        </div>
+        <div class="drawer-field">
+          <div class="df-icon">📍</div>
+          <div class="df-info">
+            <span class="df-label">Location</span>
+            <span class="df-val" id="df-location">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVBAR -->
+  <nav class="v-navbar">
+    <div class="nav-logo">
+      <span class="brand-hex"><i class="fi fi-ss-vote-yea"></i></span>
+      <span class="brand-name">DigiVote</span>
+    </div>
+    <div class="nav-right">
+      <span class="nav-user" id="nav-user">—</span>
+      <button class="nav-profile-btn" id="nav-profile-btn" onclick="openProfile()" title="View your profile">
+        <span id="nav-avatar-initials">?</span>
+      </button>
+      <button class="nav-logout" onclick="logoutVoter()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="v-main">
+    <section class="dash-section" id="section-dashboard">
+
+      <div class="dash-welcome">
+        <div class="dash-welcome-left">
+          <p class="dash-greeting">Welcome back,</p>
+          <h2 class="dash-name" id="dash-name">—</h2>
+        </div>
+        <div class="dash-id-badge">
+          <span class="dash-id-label">Voter ID</span>
+          <span class="dash-id-value" id="dash-voter-id">—</span>
+        </div>
+      </div>
+
+      <div class="dash-stats">
+        <div class="stat-card">
+          <span class="stat-icon">🗳️</span>
+          <span class="stat-val" id="stat-total">—</span>
+          <span class="stat-lbl">Active Polls</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">✅</span>
+          <span class="stat-val" id="stat-voted">—</span>
+          <span class="stat-lbl">Votes Cast</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">⏳</span>
+          <span class="stat-val" id="stat-pending">—</span>
+          <span class="stat-lbl">Pending</span>
+        </div>
+      </div>
+
+      <div class="dash-actions">
+        <a href="vote.html" class="dash-action-btn voter-btn">
+          <span>🗳️</span>
+          <div>
+            <strong>Go to Voting Booth</strong>
+            <p>View and cast your vote in active elections</p>
+          </div>
+          <span class="action-arrow">→</span>
+        </a>
+      </div>
+
+      <div class="dash-notice">
+        <span class="notice-icon">ℹ️</span>
+        <p>Your vote is anonymous and encrypted. Once cast, it cannot be changed. Make sure to vote before the deadline.</p>
+      </div>
+
+    </section>
+  </main>
+
+<script type="module">
+import { initializeApp }                from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc,
+         collection, query, where,
+         getDocs }                      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// 🔧 Replace with your Firebase project config
+const firebaseConfig = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── Auth guard: only the phone number lives in sessionStorage ─────────────────
+const phone = sessionStorage.getItem('dv_phone');
+if (!phone) { window.location.href = 'login.html'; }
+
+// ── Render voter data from Firestore ─────────────────────────────────────────
+function renderVoter(data) {
+  const name     = data.name     || '—';
+  const voterID  = data.voterID  || '—';
+  const ph       = data.phone    || '';
+  const location = data.location || 'India';
+  const initials = name.trim().split(/\s+/).map(w => w[0]?.toUpperCase() || '').slice(0,2).join('');
+
+  // Navbar
+  document.getElementById('nav-user').textContent            = name.split(' ')[0];
+  document.getElementById('nav-avatar-initials').textContent = initials;
+
+  // Profile drawer
+  document.getElementById('drawer-avatar').textContent = initials;
+  document.getElementById('drawer-name').textContent   = name;
+  document.getElementById('df-name').textContent       = name;
+  document.getElementById('df-phone').textContent      = ph ? `+91 ${ph}` : '—';
+  document.getElementById('df-vid').textContent        = voterID;
+  document.getElementById('df-location').textContent   = location;
+
+  // Dashboard
+  document.getElementById('dash-name').textContent     = name;
+  document.getElementById('dash-voter-id').textContent = voterID;
+}
+
+// ── Load dashboard stats from polls collection ────────────────────────────────
+async function loadStats(voterID) {
+  try {
+    // Use local date parts to avoid UTC offset issues (IST +5:30)
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    const [pollsSnap, votesSnap] = await Promise.all([
+      getDocs(query(
+        collection(db, 'polls'),
+        where('date', '==', todayStr)
+      )),
+      getDocs(query(collection(db, 'votes'), where('voterID', '==', voterID)))
+    ]);
+
+    const total   = pollsSnap.size;
+    const voted   = votesSnap.size;
+    const pending = Math.max(0, total - voted);
+
+    document.getElementById('stat-total').textContent   = total;
+    document.getElementById('stat-voted').textContent   = voted;
+    document.getElementById('stat-pending').textContent = pending;
+  } catch (err) {
+    console.error('Stats error:', err);
+  }
+}
+
+// ── Main init ─────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const snap = await getDoc(doc(db, 'voters', phone));
+
+    if (!snap.exists()) {
+      sessionStorage.removeItem('dv_phone');
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const data = snap.data();
+    renderVoter(data);
+    loadStats(data.voterID);
+  } catch (err) {
+    console.error('Failed to load voter data:', err);
+  }
+}
+
+// ── Profile drawer ────────────────────────────────────────────────────────────
+window.openProfile        = () => document.getElementById('profile-overlay').classList.add('open');
+window.closeProfile       = () => document.getElementById('profile-overlay').classList.remove('open');
+window.handleOverlayClick = (e) => { if (e.target.id === 'profile-overlay') closeProfile(); };
+
+// ── Logout ────────────────────────────────────────────────────────────────────
+window.logoutVoter = function() {
+  sessionStorage.removeItem('dv_phone');
+  window.location.href = 'login.html';
+};
+
+init();
+document.addEventListener("contextmenu", e => e.preventDefault());
+document.addEventListener("keydown", e => { if (e.key === "F12") e.preventDefault(); });
+</script>
+</body>
+</html>

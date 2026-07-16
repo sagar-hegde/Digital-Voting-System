@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DigiVote | Voter</title>
+  <link rel="stylesheet" href="voter.css"/>
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-straight/css/uicons-solid-straight.css">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow glow-voter"></div>
+
+  <!-- NAVBAR -->
+  <nav class="v-navbar">
+    <div class="nav-logo">
+      <a href="home.html" class="nav-back-link">← Home</a>
+    </div>
+    <div class="nav-logo">
+      <span class="brand-hex"><i class="fi fi-ss-vote-yea"></i></span>
+      <span class="brand-name">DigiVote</span>
+    </div>
+    <div class="nav-right">
+      <span class="nav-user vote" id="nav-user">—</span>
+      <button class="nav-logout" onclick="logoutVoter()">Logout</button>
+    </div>
+  </nav>
+
+  <main class="v-main">
+    <div class="vote-header">
+      <h1 class="vote-title">Voting Booth</h1>
+      <p class="vote-sub">Only polls active on today's date are shown below.</p>
+    </div>
+
+    <div class="polls-loading" id="polls-loading">
+      <div class="spinner"></div>
+      <p>Loading active polls…</p>
+    </div>
+
+    <div class="polls-empty hidden" id="polls-empty">
+      <div class="empty-icon">🗓️</div>
+      <h3>No Active Polls Today</h3>
+      <p>There are no elections scheduled for today. Check back on the election date.</p>
+      <a href="home.html" class="btn-secondary">← Back to Home</a>
+    </div>
+
+    <div class="polls-grid" id="polls-grid"></div>
+  </main>
+
+  <!-- VOTE MODAL -->
+  <div class="modal-overlay hidden" id="vote-modal">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h3 class="modal-title" id="modal-poll-title">Poll Title</h3>
+      <p class="modal-sub">Select one candidate and confirm your vote. <strong>This action is irreversible.</strong></p>
+      <div class="candidate-list" id="candidate-list"></div>
+      <div class="modal-selected hidden" id="modal-selected">
+        <span class="selected-label">Your choice:</span>
+        <span class="selected-name" id="selected-name">—</span>
+      </div>
+      <div id="vote-error" class="auth-error hidden"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary voter-btn" id="btn-cast-vote" onclick="castVote()" disabled>Cast My Vote 🗳️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUCCESS MODAL -->
+  <div class="modal-overlay hidden" id="success-modal">
+    <div class="modal-box success-box">
+      <div class="success-icon">✅</div>
+      <h3 class="modal-title">Vote Cast Successfully!</h3>
+      <p class="modal-sub">Your vote has been recorded securely. Thank you for participating in democracy.</p>
+      <div class="success-id">
+        <span class="success-id-label">Receipt ID</span>
+        <span class="success-id-val" id="receipt-id">—</span>
+      </div>
+      <button class="btn-primary voter-btn" onclick="closeSuccessModal()">Done</button>
+    </div>
+  </div>
+
+<script type="module">
+import { initializeApp }                    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc,
+         collection, query, where, getDocs,
+         Timestamp }                         from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// 🔧 Replace with your Firebase project config
+const firebaseConfig = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── Auth guard ────────────────────────────────────────────────────────────────
+const phone = sessionStorage.getItem('dv_phone');
+if (!phone) { window.location.href = 'login.html'; }
+
+// Runtime state (in-memory only — not stored anywhere)
+let _voterID              = null;
+let _activePollID         = null;
+let _selectedCandidateID  = null;
+let _selectedCandidateName = null;
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+function clearError(id) {
+  document.getElementById(id)?.classList.add('hidden');
+}
+
+// ── Init: fetch voter by phone (doc ID) from Firestore ───────────────────────
+async function init() {
+  try {
+    const snap = await getDoc(doc(db, 'voters', phone));
+    if (!snap.exists()) {
+      sessionStorage.removeItem('dv_phone');
+      window.location.href = 'login.html';
+      return;
+    }
+    const data = snap.data();
+    _voterID = data.voterID;
+
+    const navUser = document.getElementById('nav-user');
+    if (navUser) navUser.textContent = `${data.name} · ${data.voterID}`;
+
+    await loadActivePolls();
+  } catch (err) {
+    console.error('Init error:', err);
+  }
+}
+
+// ── Load active polls from Firestore ─────────────────────────────────────────
+async function loadActivePolls() {
+  const loadingEl = document.getElementById('polls-loading');
+  const emptyEl   = document.getElementById('polls-empty');
+  const gridEl    = document.getElementById('polls-grid');
+
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  try {
+    const [pollsSnap, votesSnap] = await Promise.all([
+      getDocs(query(
+        collection(db, 'polls'),
+        where('date', '==', todayStr)
+      )),
+      getDocs(query(collection(db, 'votes'), where('voterID', '==', _voterID)))
+    ]);
+
+    loadingEl.classList.add('hidden');
+
+    if (pollsSnap.empty) { emptyEl.classList.remove('hidden'); return; }
+
+    const votedIn = new Set(votesSnap.docs.map(d => d.data().electionID));
+    pollsSnap.docs.forEach(pd => gridEl.appendChild(buildPollCard(pd.id, pd.data(), votedIn.has(pd.id))));
+  } catch (err) {
+    loadingEl.classList.add('hidden');
+    emptyEl.classList.remove('hidden');
+    console.error('Load polls error:', err);
+  }
+}
+
+function buildPollCard(pollID, poll, hasVoted) {
+  const card = document.createElement('div');
+  card.className = 'poll-card';
+  const fmtDate = poll.date
+    ? new Date(poll.date).toLocaleDateString('en-IN')
+    : '—';
+  card.innerHTML = `
+    <div class="poll-info">
+      <div class="poll-title">${poll.title || 'Untitled Poll'}</div>
+      <div class="poll-meta">
+        <span class="poll-date">📅 ${fmtDate}</span>
+        <span>${poll.options?.length || 0} options</span>
+      </div>
+    </div>
+    ${hasVoted
+      ? `<span class="poll-voted-badge">✅ Voted</span>`
+      : `<button class="poll-vote-btn" onclick="openVoteModal('${pollID}')">Vote Now →</button>`}
+  `;
+  return card;
+}
+
+// ── Vote modal ────────────────────────────────────────────────────────────────
+window.openVoteModal = async function(pollID) {
+  _activePollID = pollID;
+  _selectedCandidateID = _selectedCandidateName = null;
+
+  document.getElementById('btn-cast-vote').disabled = true;
+  document.getElementById('modal-selected').classList.add('hidden');
+  clearError('vote-error');
+
+  const snap = await getDoc(doc(db, 'polls', pollID));
+  const poll = snap.data();
+
+  document.getElementById('modal-poll-title').textContent = poll?.title || 'Vote';
+
+  const listEl = document.getElementById('candidate-list');
+  listEl.innerHTML = '';
+  (poll?.options || []).forEach((optText, idx) => {
+    const opt = document.createElement('div');
+    opt.className = 'candidate-option';
+    opt.innerHTML = `
+      <div class="candidate-radio"></div>
+      <div>
+        <div class="candidate-name">${optText}</div>
+      </div>`;
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.candidate-option').forEach(o => o.classList.remove('chosen'));
+      opt.classList.add('chosen');
+      _selectedCandidateID   = `opt_${idx}`;
+      _selectedCandidateName = optText;
+      document.getElementById('modal-selected').classList.remove('hidden');
+      document.getElementById('selected-name').textContent = optText;
+      document.getElementById('btn-cast-vote').disabled = false;
+    });
+    listEl.appendChild(opt);
+  });
+
+  document.getElementById('vote-modal').classList.remove('hidden');
+};
+
+window.closeModal = function() {
+  document.getElementById('vote-modal').classList.add('hidden');
+  _activePollID = _selectedCandidateID = _selectedCandidateName = null;
+};
+
+// ── Cast vote — writes to Firestore, no local state stored ───────────────────
+window.castVote = async function() {
+  if (!_activePollID || !_selectedCandidateID) return;
+  clearError('vote-error');
+
+  const castBtn = document.getElementById('btn-cast-vote');
+  castBtn.disabled    = true;
+  castBtn.textContent = 'Recording…';
+
+  try {
+    // Check if already voted (Firestore is the source of truth)
+    const existing = await getDoc(doc(db, 'votes', `${_voterID}_${_activePollID}`));
+    if (existing.exists()) {
+      showError('vote-error', 'You have already voted in this election.');
+      castBtn.disabled    = false;
+      castBtn.textContent = 'Cast My Vote 🗳️';
+      return;
+    }
+
+    const receiptID = `RCP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+
+    // Vote document ID = voterID_pollID (prevents double-voting at DB level)
+    await setDoc(doc(db, 'votes', `${_voterID}_${_activePollID}`), {
+      voterID:     _voterID,
+      electionID:  _activePollID,
+      candidateID: _selectedCandidateID,
+      candidateName: _selectedCandidateName,
+      receiptID,
+      timestamp:   Timestamp.now()
+    });
+
+    document.getElementById('vote-modal').classList.add('hidden');
+    document.getElementById('receipt-id').textContent = receiptID;
+    document.getElementById('success-modal').classList.remove('hidden');
+  } catch (err) {
+    console.error('castVote error:', err);
+    showError('vote-error', 'Failed to record vote. Please try again.');
+    castBtn.disabled    = false;
+    castBtn.textContent = 'Cast My Vote 🗳️';
+  }
+};
+
+window.closeSuccessModal = function() {
+  document.getElementById('success-modal').classList.add('hidden');
+  const grid = document.getElementById('polls-grid');
+  grid.innerHTML = '';
+  document.getElementById('polls-loading').classList.remove('hidden');
+  loadActivePolls();
+};
+
+// ── Logout ────────────────────────────────────────────────────────────────────
+window.logoutVoter = function() {
+  sessionStorage.removeItem('dv_phone');
+  window.location.href = 'login.html';
+};
+
+init();
+document.addEventListener("contextmenu", e => e.preventDefault());
+
+document.addEventListener("keydown", e => {
+  if (e.key === "F12") e.preventDefault();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DigiVote | Voter</title>
+  <link rel="stylesheet" href="voter.css"/>
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-straight/css/uicons-solid-straight.css">
+  <style>
+    @keyframes dv-spin {
+      to { transform: rotate(360deg); }
+    }
+    .dv-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2.5px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: dv-spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+    .auth-submit.loading {
+      pointer-events: none;
+      opacity: 0.85;
+    }
+
+    /* Hidden by default — shown only on mobile */
+    .mobile-back-link {
+      display: none;
+    }
+    @media (max-width: 768px) {
+      .mobile-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.82rem;
+        color: var(--muted, #94a3b8);
+        text-decoration: none;
+        margin-bottom: 1rem;
+        transition: color 0.2s;
+      }
+      .mobile-back-link:hover {
+        color: var(--voter, #22c55e);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow glow-voter"></div>
+
+  <div class="auth-wrapper">
+
+    <!-- LEFT PANEL -->
+    <div class="auth-brand">
+      <a href="../index.html" class="brand-back">← Back</a>
+      <div class="brand-logo">
+        <span class="brand-hex"><i class="fi fi-ss-vote-yea"></i></span>
+        <span class="brand-name">DigiVote</span>
+      </div>
+      <h2 class="brand-headline">Your vote,<br/><span class="highlight">your voice.</span></h2>
+      <p class="brand-sub">Secure, transparent, and tamper-proof digital voting for every citizen.</p>
+      <ul class="brand-features">
+        <li><span class="feat-dot voter-dot"></span>End-to-end encrypted</li>
+        <li><span class="feat-dot voter-dot"></span>One vote per citizen</li>
+        <li><span class="feat-dot voter-dot"></span>Real-time results</li>
+      </ul>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="auth-box">
+
+      <!-- Mobile-only back link -->
+      <a href="../index.html" class="mobile-back-link">← Back</a>
+
+      <div class="auth-role-tag">🗳️ Voter Portal</div>
+
+      <div class="auth-toggle">
+        <button class="toggle-btn active" id="btn-login" onclick="switchTab('login')">Login</button>
+        <button class="toggle-btn"        id="btn-signup" onclick="switchTab('signup')">Sign Up</button>
+        <div class="toggle-slider" id="toggle-slider"></div>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form class="auth-form active" id="form-login" onsubmit="handleLogin(event)">
+        <div class="field-group">
+          <label class="field-label">Mobile Number</label>
+          <div class="field-input-wrap">
+            <span class="field-prefix">+91</span>
+            <input type="tel" id="login-phone" class="field-input" placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}" required/>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Password</label>
+          <div class="field-input-wrap">
+            <input type="password" id="login-password" class="field-input" placeholder="Enter password" required/>
+            <button type="button" class="field-eye" onclick="togglePass('login-password',this)">👁</button>
+          </div>
+        </div>
+        <div id="login-error" class="auth-error hidden"></div>
+        <button type="submit" class="auth-submit voter-submit" id="login-btn">
+          Login
+        </button>
+        <p class="auth-switch">Don't have an account? <a onclick="switchTab('signup')">Sign Up</a></p>
+      </form>
+
+      <!-- SIGNUP FORM -->
+      <form class="auth-form" id="form-signup" onsubmit="handleSignup(event)">
+        <div class="field-group">
+          <label class="field-label">Full Name</label>
+          <input type="text" id="signup-name" class="field-input" placeholder="As per Aadhaar" required/>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Mobile Number</label>
+          <div class="field-input-wrap">
+            <span class="field-prefix">+91</span>
+            <input type="tel" id="signup-phone" class="field-input" placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}" required/>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Password</label>
+          <div class="field-input-wrap">
+            <input type="password" id="signup-password" class="field-input" placeholder="Min 6 characters" required minlength="6"/>
+            <button type="button" class="field-eye" onclick="togglePass('signup-password',this)">👁</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Confirm Password</label>
+          <div class="field-input-wrap">
+            <input type="password" id="signup-confirm" class="field-input" placeholder="Re-enter password" required/>
+            <button type="button" class="field-eye" onclick="togglePass('signup-confirm',this)">👁</button>
+          </div>
+        </div>
+        <div id="signup-error" class="auth-error hidden"></div>
+        <button type="submit" class="auth-submit voter-submit" id="signup-btn">
+          Create Account
+        </button>
+        <p class="auth-switch">Already registered? <a onclick="switchTab('login')">Login</a></p>
+      </form>
+    </div>
+  </div>
+
+<script type="module">
+import { initializeApp }                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc,
+         collection, query, where, getDocs,
+         Timestamp }                            from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// 🔧 Replace with your Firebase project config
+const firebaseConfig = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+if (sessionStorage.getItem('dv_phone')) {
+  window.location.href = 'home.html';
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+function clearError(id) {
+  document.getElementById(id)?.classList.add('hidden');
+}
+
+function setLoading(btnId, on, originalText) {
+  const btn = document.getElementById(btnId);
+  if (on) {
+    btn.disabled = true;
+    btn.classList.add('loading');
+    btn.innerHTML = `<span class="dv-spinner"></span>Please wait...`;
+  } else {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.innerHTML = originalText;
+  }
+}
+
+function makeVoterID() {
+  const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let id = '';
+  for (let i = 0; i < 3; i++) id += L[Math.floor(Math.random() * 26)];
+  for (let i = 0; i < 5; i++) id += Math.floor(Math.random() * 10);
+  return id;
+}
+
+window.switchTab = function(tab) {
+  document.getElementById('toggle-slider').classList.toggle('right', tab === 'signup');
+  document.getElementById('btn-login').classList.toggle('active',   tab === 'login');
+  document.getElementById('btn-signup').classList.toggle('active',  tab === 'signup');
+  document.getElementById('form-login').classList.toggle('active',  tab === 'login');
+  document.getElementById('form-signup').classList.toggle('active', tab === 'signup');
+  clearError('login-error');
+  clearError('signup-error');
+};
+
+window.togglePass = function(id, btn) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+  btn.textContent = el.type === 'password' ? '👁' : '🙈';
+};
+
+window.handleLogin = async function(e) {
+  e.preventDefault();
+  clearError('login-error');
+  const phone    = document.getElementById('login-phone').value.trim();
+  const password = document.getElementById('login-password').value;
+
+  if (!/^\d{10}$/.test(phone)) return showError('login-error', 'Enter a valid 10-digit mobile number.');
+  if (!password)               return showError('login-error', 'Password is required.');
+
+  setLoading('login-btn', true, 'Login');
+  try {
+    const snap = await getDoc(doc(db, 'voters', phone));
+    if (!snap.exists())                    { showError('login-error', 'No account found with this number.'); return; }
+    if (snap.data().password !== password) { showError('login-error', 'Incorrect password.'); return; }
+
+    sessionStorage.setItem('dv_phone', phone);
+    window.location.href = 'home.html';
+  } catch (err) {
+    console.error('Login error:', err);
+    showError('login-error', 'Login failed. Please try again.');
+  } finally {
+    setLoading('login-btn', false, 'Login');
+  }
+};
+
+window.handleSignup = async function(e) {
+  e.preventDefault();
+  clearError('signup-error');
+  const name     = document.getElementById('signup-name').value.trim();
+  const phone    = document.getElementById('signup-phone').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const confirm  = document.getElementById('signup-confirm').value;
+
+  if (!name)                   return showError('signup-error', 'Full name is required.');
+  if (!/^\d{10}$/.test(phone)) return showError('signup-error', 'Enter a valid 10-digit mobile number.');
+  if (password.length < 6)     return showError('signup-error', 'Password must be at least 6 characters.');
+  if (password !== confirm)    return showError('signup-error', 'Passwords do not match.');
+
+  setLoading('signup-btn', true, 'Create Account');
+  try {
+    const existing = await getDoc(doc(db, 'voters', phone));
+    if (existing.exists()) { showError('signup-error', 'This mobile number is already registered.'); return; }
+
+    let voterID, unique = false;
+    while (!unique) {
+      voterID = makeVoterID();
+      const check = await getDocs(query(collection(db, 'voters'), where('voterID', '==', voterID)));
+      unique = check.empty;
+    }
+
+    await setDoc(doc(db, 'voters', phone), {
+      name, phone, password, voterID,
+      role: 'voter', location: 'India',
+      createdAt: Timestamp.now()
+    });
+
+    sessionStorage.setItem('dv_phone', phone);
+    window.location.href = 'home.html';
+  } catch (err) {
+    console.error('Signup error:', err);
+    showError('signup-error', 'Signup failed. Please try again.');
+  } finally {
+    setLoading('signup-btn', false, 'Create Account');
+  }
+};
+
+document.addEventListener("contextmenu", e => e.preventDefault());
+document.addEventListener("keydown", e => { if (e.key === "F12") e.preventDefault(); });
+</script>
+</body>
+</html>
