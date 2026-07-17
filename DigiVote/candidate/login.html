@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DigiVote | Candidate</title>
+  <link rel="stylesheet" href="candidate.css" />
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-straight/css/uicons-solid-straight.css" />
+  <style>
+    /* ── Please wait spinner ── */
+    @keyframes dv-spin {
+      to { transform: rotate(360deg); }
+    }
+    .dv-spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2.5px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: dv-spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+    .btn.loading {
+      pointer-events: none;
+      opacity: 0.85;
+    }
+
+    /* ── Login page overrides ── */
+    body { overflow: hidden; }
+
+    .login-wrap {
+      display: flex; height: 100vh;
+      position: relative; z-index: 1;
+    }
+
+    /* LEFT PANEL */
+    .login-left {
+      flex: 0 0 42%;
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 3rem 3.5rem;
+      border-right: 1px solid var(--border);
+      position: relative; overflow: hidden;
+    }
+    .login-left::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 100% 60% at 0% 30%, rgba(245,158,11,0.09) 0%, transparent 65%),
+        radial-gradient(ellipse 70%  50% at 80% 90%, rgba(249,115,22,0.07) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .login-left::after {
+      content: '';
+      position: absolute; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .back-link {
+      position: absolute; top: 1.5rem; left: 2rem; z-index: 10;
+      font-size: 0.82rem; color: var(--muted);
+      text-decoration: none; transition: color 0.2s;
+      display: flex; align-items: center; gap: 0.3rem;
+    }
+    .back-link:hover { color: var(--candidate); }
+
+    .left-content { position: relative; z-index: 1; }
+
+    .left-brand {
+      display: flex; align-items: center; gap: 0.6rem;
+      margin-bottom: 2.5rem;
+    }
+    .left-brand .icon {
+      width: 38px; height: 38px;
+      color: var(--candidate);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+    }
+    .left-brand .name {
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+      font-size: 1.3rem; font-weight: 800;
+      color: var(--text);
+    }
+
+    .left-headline {
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-weight: 800; line-height: 1.2;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.2rem;
+    }
+    .left-headline .hi { color: var(--candidate); }
+
+    .left-sub {
+      font-size: 0.95rem; color: var(--muted);
+      max-width: 340px; line-height: 1.7;
+      margin-bottom: 2rem;
+    }
+
+    .feature-list { list-style: none; display: flex; flex-direction: column; gap: 0.65rem; }
+    .feature-list li {
+      display: flex; align-items: center; gap: 0.7rem;
+      font-size: 0.88rem; color: var(--muted);
+    }
+    .feature-list li::before {
+      content: '';
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      background: var(--candidate);
+      box-shadow: 0 0 8px var(--cand-glow);
+    }
+
+    /* RIGHT PANEL */
+    .login-right {
+      flex: 1;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem 3rem;
+    }
+
+    .right-inner { width: 95%; max-width: 380px; }
+
+    /* Mobile-only back link inside right panel */
+    .mobile-back-link {
+      display: none;
+    }
+
+    .portal-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.35rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      font-size: 0.75rem; font-weight: 600;
+      color: var(--muted); letter-spacing: 0.08em;
+      text-transform: uppercase; margin-bottom: 2rem;
+    }
+    .portal-badge .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--candidate);
+      box-shadow: 0 0 6px var(--cand-glow);
+    }
+
+    .auth-tabs {
+      display: flex; gap: 0.4rem;
+      background: #252a35;
+      border-radius: 20px;
+      margin-bottom: 2rem;
+      width: 250px;
+      height: 40px;
+    }
+    .auth-tab {
+      padding: 0.55rem 1.6rem;
+      border-radius: 99px;
+      background: transparent; color: var(--muted);
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+      font-size: 0.92rem; font-weight: 500;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .auth-tab.active {
+      background: var(--surface2);
+      border-color: rgba(245,158,11,0.3);
+      color: var(--text);
+    }
+
+    .phone-row { display: flex; gap: 0; }
+    .phone-prefix {
+      padding: 0.75rem 0.9rem;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-right: none; border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+      color: var(--muted); font-size: 0.9rem;
+      display: flex; align-items: center; white-space: nowrap;
+    }
+    .phone-row input {
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }
+
+    .pw-wrap { position: relative; }
+    .pw-toggle {
+      position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 1rem; padding: 0.2rem;
+    }
+    .pw-wrap input { padding-right: 2.8rem; }
+
+    /* ── MOBILE — mirrors voter login page exactly ── */
+    @media (max-width: 768px) {
+      .login-wrap {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+      }
+
+      .login-left {
+        flex: none;
+        padding: 2rem 1.5rem 1.5rem;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        display: none;
+      }
+
+      .back-link {
+        top: 1rem;
+        left: 1rem;
+      }
+
+      .left-brand {
+        margin-bottom: 1rem;
+      }
+
+      .left-headline {
+        font-size: clamp(1.5rem, 6vw, 2rem);
+        margin-bottom: 0.6rem;
+      }
+
+      .left-sub {
+        font-size: 0.88rem;
+        margin-bottom: 1rem;
+        max-width: 100%;
+      }
+
+      .feature-list {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .feature-list li {
+        font-size: 0.8rem;
+      }
+
+      /* Right panel: full width, scrollable — same as voter login */
+      .login-right {
+        flex: 1;
+        padding: 2rem 1.5rem 3rem;
+      }
+
+      .right-inner {
+        max-width: 100%;
+      }
+
+      .mobile-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.82rem;
+        color: var(--muted, #94a3b8);
+        text-decoration: none;
+        margin-bottom: 1rem;
+        transition: color 0.2s;
+      }
+      .mobile-back-link:hover {
+        color: var(--candidate);
+      }
+    }
+
+    @media (max-width: 400px) {
+      .login-left {
+        padding: 2rem 1rem 1.2rem;
+      }
+
+      .login-right {
+        padding: 1.5rem 1rem 2.5rem;
+      }
+
+      .auth-tab {
+        padding: 0.5rem 1.1rem;
+        font-size: 0.85rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="login-wrap">
+
+  <!-- ── LEFT ── -->
+  <div class="login-left">
+    <a class="back-link" href="../index.html">← Back</a>
+    <div class="left-content">
+      <div class="left-brand">
+        <div class="icon"><i class="fi fi-ss-vote-yea"></i></div>
+        <span class="name" style="font-family:'Trebuchet MS','Lucida Sans Unicode','Lucida Grande','Lucida Sans',Arial,sans-serif">DigiVote</span>
+      </div>
+      <h1 class="left-headline">
+        Your voice,<br>
+        <span class="hi">your campaign.</span>
+      </h1>
+      <p class="left-sub">
+        Create polls, manage elections, and connect with voters — all in one secure candidate dashboard.
+      </p>
+      <ul class="feature-list">
+        <li>Create & manage polls instantly</li>
+        <li>Unique Candidate ID for every profile</li>
+        <li>Real-time voting results</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── RIGHT ── -->
+  <div class="login-right">
+    <div class="right-inner">
+
+      <!-- Mobile-only back link -->
+      <a href="../index.html" class="mobile-back-link">← Back</a><br>
+
+      <div class="portal-badge">
+        <span>🏛️</span>
+        Candidate Portal
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login"  onclick="switchTab('login')">Login</button>
+        <button class="auth-tab"        id="tab-signup" onclick="switchTab('signup')">Sign Up</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div class="auth-form active" id="form-login">
+        <div class="form-group">
+          <label>Mobile Number</label>
+          <div class="phone-row">
+            <div class="phone-prefix">+91</div>
+            <input type="tel" id="login-mobile" placeholder="10-digit number" maxlength="10" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="login-password" placeholder="Enter password" />
+            <button class="pw-toggle" onclick="togglePw('login-password', this)" tabindex="-1">👁</button>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="handleLogin()" id="btn-login">Login</button>
+        <p class="text-center text-muted text-sm mt-2">
+          Don't have an account?
+          <a href="#" onclick="switchTab('signup')" style="color:#f59e0b;text-decoration:none;">Sign Up</a>
+        </p>
+      </div>
+
+      <!-- SIGNUP -->
+      <div class="auth-form" id="form-signup">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="signup-name" placeholder="Your full name" />
+        </div>
+        <div class="form-group">
+          <label>Mobile Number</label>
+          <div class="phone-row">
+            <div class="phone-prefix">+91</div>
+            <input type="tel" id="signup-mobile" placeholder="10-digit number" maxlength="10" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="signup-password" placeholder="Create a password (min 6 chars)" />
+            <button class="pw-toggle" onclick="togglePw('signup-password', this)" tabindex="-1">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Confirm Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="signup-confirm" placeholder="Repeat password" />
+            <button class="pw-toggle" onclick="togglePw('signup-confirm', this)" tabindex="-1">👁</button>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="handleSignup()" id="btn-signup">Create Account</button>
+        <p class="text-center text-muted text-sm mt-2">
+          Already have an account?
+          <a href="#" onclick="switchTab('login')" style="color:#f59e0b;text-decoration:none;">Login</a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, collection, query, where, getDocs }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // 🔧 Replace with your Firebase project config
+    const firebaseConfig = {
+      apiKey:            "YOUR_API_KEY",
+      authDomain:        "YOUR_PROJECT.firebaseapp.com",
+      projectId:         "YOUR_PROJECT_ID",
+      storageBucket:     "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId:             "YOUR_APP_ID"
+    };
+
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  function generateCandidateID() {
+    return 'C' + Math.floor(1000 + Math.random() * 9000);
+  }
+
+  function toast(msg, type = 'info') {
+    const c  = document.getElementById('toast-container');
+    const el = document.createElement('div');
+    el.className = `toast toast-${type}`;
+    el.innerHTML = `<span>${type==='success'?'✓':type==='error'?'✕':'ℹ'}</span> ${msg}`;
+    c.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+
+  const BTN_LABELS = { 'btn-login': 'Login', 'btn-signup': 'Create Account' };
+
+  function setLoading(id, on) {
+    const btn = document.getElementById(id);
+    if (on) {
+      btn.disabled = true;
+      btn.classList.add('loading');
+      btn.innerHTML = `<span class="dv-spinner"></span>Please wait...`;
+    } else {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+      btn.innerHTML = BTN_LABELS[id];
+    }
+  }
+
+  window.switchTab = function(tab) {
+    ['login', 'signup'].forEach(t => {
+      document.getElementById('form-' + t).classList.toggle('active', t === tab);
+      document.getElementById('tab-'  + t).classList.toggle('active', t === tab);
+    });
+  };
+
+  window.togglePw = function(id, btn) {
+    const el = document.getElementById(id);
+    el.type = el.type === 'password' ? 'text' : 'password';
+    btn.textContent = el.type === 'password' ? '👁' : '🙈';
+  };
+
+  window.handleLogin = async function() {
+    const mobile   = document.getElementById('login-mobile').value.trim();
+    const password = document.getElementById('login-password').value;
+    if (!/^\d{10}$/.test(mobile)) return toast('Enter a valid 10-digit mobile number', 'error');
+    if (!password)                return toast('Enter your password', 'error');
+
+    setLoading('btn-login', true);
+    try {
+      const snap = await getDocs(query(collection(db, 'candidates'), where('mobile', '==', mobile)));
+      if (snap.empty) { toast('No account found for this number', 'error'); return; }
+      const c = snap.docs[0].data();
+      if (c.password !== btoa(password)) { toast('Incorrect password', 'error'); return; }
+      localStorage.setItem('dv_candidate', JSON.stringify({
+        id: c.candidateID, name: c.name, mobile: c.mobile, docId: snap.docs[0].id
+      }));
+      toast('Welcome back, ' + c.name + '!', 'success');
+      setTimeout(() => window.location.href = 'home.html', 900);
+    } catch(e) {
+      console.error(e); toast('Login failed. Check Firebase config.', 'error');
+    } finally {
+      setLoading('btn-login', false);
+    }
+  };
+
+  window.handleSignup = async function() {
+    const name    = document.getElementById('signup-name').value.trim();
+    const mobile  = document.getElementById('signup-mobile').value.trim();
+    const pass    = document.getElementById('signup-password').value;
+    const confirm = document.getElementById('signup-confirm').value;
+    if (!name)                    return toast('Enter your full name', 'error');
+    if (!/^\d{10}$/.test(mobile)) return toast('Enter a valid 10-digit mobile number', 'error');
+    if (pass.length < 6)          return toast('Password must be at least 6 characters', 'error');
+    if (pass !== confirm)         return toast('Passwords do not match', 'error');
+
+    setLoading('btn-signup', true);
+    try {
+      const snap = await getDocs(query(collection(db, 'candidates'), where('mobile', '==', mobile)));
+      if (!snap.empty) { toast('This mobile number is already registered', 'error'); return; }
+
+      let candidateID, exists = true;
+      while (exists) {
+        candidateID = generateCandidateID();
+        const s = await getDocs(query(collection(db, 'candidates'), where('candidateID', '==', candidateID)));
+        exists = !s.empty;
+      }
+
+      const docId = 'cand_' + Date.now();
+      await setDoc(doc(db, 'candidates', docId), {
+        name, mobile, password: btoa(pass), candidateID,
+        location: 'India', createdAt: new Date().toISOString()
+      });
+      localStorage.setItem('dv_candidate', JSON.stringify({ id: candidateID, name, mobile, docId }));
+      toast('Account created! Your ID: ' + candidateID, 'success');
+      setTimeout(() => window.location.href = 'home.html', 1200);
+    } catch(e) {
+      console.error(e); toast('Signup failed. Check Firebase config.', 'error');
+    } finally {
+      setLoading('btn-signup', false);
+    }
+  };
+
+  if (localStorage.getItem('dv_candidate')) window.location.href = 'home.html';
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const loginActive = document.getElementById('form-login').classList.contains('active');
+    if (loginActive) window.handleLogin(); else window.handleSignup();
+  });
+
+  document.addEventListener("contextmenu", e => e.preventDefault());
+  document.addEventListener("keydown", e => { if (e.key === "F12") e.preventDefault(); });
+</script>
+</body>
+</html>

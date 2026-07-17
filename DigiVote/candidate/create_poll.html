@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DigiVote | Candidate</title>
+  <link rel="stylesheet" href="candidate.css" />
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-straight/css/uicons-solid-straight.css" />
+  <style>
+    .navbar-left { display:flex; align-items:center; gap:1.4rem; }
+    .navbar-brand { display:flex; align-items:center; gap:0.5rem; font-family:'Trebuchet MS','Lucida Sans Unicode','Lucida Grande','Lucida Sans',Arial,sans-serif; }
+    .brand-hex { display:flex; align-items:center; font-size:1.3rem; background:linear-gradient(135deg,var(--candidate),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .brand-hex i { display:block; -webkit-text-fill-color: #f59e0b !important;}
+    .brand-name { font-weight:800; font-size:1.35rem; letter-spacing:-0.02em; background:linear-gradient(135deg,var(--candidate),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+
+    /* avatar */
+    .nav-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--candidate), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; font-weight: 800; font-size: 0.95rem;
+      color: #fff; cursor: pointer; border: none;
+      box-shadow: 0 0 12px var(--cand-glow);
+      transition: transform 0.2s; flex-shrink: 0;
+    }
+    .nav-avatar:hover { transform: scale(1.08); }
+
+    /* profile drawer (same as home) */
+    .profile-drawer {
+      position: fixed; top: 0; right: -320px; bottom: 0;
+      width: 300px; z-index: 200;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      box-shadow: -12px 0 40px rgba(0,0,0,0.5);
+      transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+      display: flex; flex-direction: column;
+      padding: 2rem 1.6rem;
+    }
+    .profile-drawer.open { right: 0; }
+    .drawer-overlay {
+      position: fixed; inset: 0; z-index: 199;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+      display: none;
+    }
+    .drawer-overlay.open { display: block; }
+    .drawer-close {
+      align-self: flex-end; background: none; border: none;
+      color: var(--muted); font-size: 1.4rem; cursor: pointer;
+      transition: color 0.2s; line-height: 1; margin-bottom: 1rem;
+    }
+    .drawer-close:hover { color: var(--text); }
+    .drawer-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--candidate), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; font-weight: 800; font-size: 1.8rem;
+      color: #fff; margin: 0 auto 0.8rem;
+      box-shadow: 0 0 24px var(--cand-glow);
+    }
+    .drawer-name {
+      text-align: center;
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; font-weight: 700; font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+    .drawer-role-badge {
+      display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+      margin: 0 auto 1.8rem;
+      padding: 0.25rem 0.9rem; border-radius: 99px;
+      border: 1px solid rgba(245,158,11,0.3);
+      background: rgba(245,158,11,0.08);
+      color: var(--candidate); font-size: 0.73rem;
+      font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      width: fit-content;
+    }
+    .drawer-divider { height:1px; background: var(--border); margin-bottom: 1.4rem; }
+    .drawer-info-item {
+      display: flex; align-items: flex-start; gap: 0.85rem;
+      padding: 0.7rem 0.8rem; border-radius: var(--radius-sm);
+      background: var(--surface2); margin-bottom: 0.6rem;
+    }
+    .drawer-info-icon {
+      width: 32px; height: 32px; border-radius: 8px; background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.95rem; flex-shrink: 0;
+    }
+    .drawer-info-label { font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.15rem; }
+    .drawer-info-value { font-size:0.9rem;font-weight:500;color:var(--text); }
+
+    /* page header row */
+    .page-header-row {
+      display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;
+    }
+    .page-header-row h1 {
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; font-size: 1.5rem; font-weight: 800;
+    }
+    .page-header-row p { color: var(--muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navbar ── -->
+  <nav class="navbar">
+    <div class="navbar-left">
+      <a href="../index.html" style="font-size:0.8rem;color:var(--muted);text-decoration:none;transition:color 0.2s;"
+         onmouseover="this.style.color='#f59e0b'" onmouseout="this.style.color='var(--muted)'">← Home</a>
+      <a class="navbar-brand" href="home.html"><span class="brand-hex" style="color: #f59e0b;"><i class="fi fi-ss-vote-yea"></i></span> <span class="brand-name">DigiVote</span></a>
+    </div>
+    <div class="navbar-info">
+      <span id="nav-name-text" style="font-size:0.88rem;color:var(--muted)"></span>
+      <button class="nav-avatar" id="nav-avatar" onclick="openDrawer()" title="View profile">
+        <span id="nav-initial">?</span>
+      </button>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- Profile drawer -->
+  <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+  <div class="profile-drawer" id="profile-drawer">
+    <button class="drawer-close" onclick="closeDrawer()">×</button>
+    <div class="drawer-avatar" id="drawer-avatar-initials">?</div>
+    <div class="drawer-name"   id="drawer-name">—</div>
+    <div class="drawer-role-badge"><i class="fi fi-ss-vote-yea"></i> Registered Candidate</div>
+    <div class="drawer-divider"></div>
+    <div class="drawer-info-item">
+      <div class="drawer-info-icon">👤</div>
+      <div><div class="drawer-info-label">Full Name</div><div class="drawer-info-value" id="drawer-fullname">—</div></div>
+    </div>
+    <div class="drawer-info-item">
+      <div class="drawer-info-icon">📱</div>
+      <div><div class="drawer-info-label">Mobile</div><div class="drawer-info-value" id="drawer-mobile">—</div></div>
+    </div>
+    <div class="drawer-info-item">
+      <div class="drawer-info-icon">🪪</div>
+      <div><div class="drawer-info-label">Candidate ID</div><div class="drawer-info-value" id="drawer-id">—</div></div>
+    </div>
+    <div class="drawer-info-item">
+      <div class="drawer-info-icon">📍</div>
+      <div><div class="drawer-info-label">Location</div><div class="drawer-info-value">India</div></div>
+    </div>
+  </div>
+
+  <!-- ── Main ── -->
+  <main class="page-wrap" style="max-width:680px">
+
+    <div class="page-header-row">
+      <a href="home.html" class="btn btn-outline btn-sm">← Back</a>
+      <div>
+        <h1>Create Poll</h1>
+        <p>Set up a new poll for voters</p>
+      </div>
+    </div>
+
+    <div class="card">
+
+      <div class="form-group">
+        <label>Poll Title *</label>
+        <input type="text" id="poll-title" placeholder="e.g. Best candidate for Student Council President" />
+      </div>
+
+      <div class="form-group">
+        <label>Voting Date *</label>
+        <input type="date" id="poll-date" />
+      </div>
+
+      <div class="form-group">
+        <label>Options / Candidates *</label>
+        <div class="options-list" id="options-list"></div>
+        <button class="btn-add-option" onclick="addOption()" id="btn-add-option">+ Add Option</button>
+        <p class="text-sm text-muted mt-1">Minimum 2 options required · Maximum 10</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <div id="preview-section" style="display:none;margin-bottom:1.4rem">
+        <label style="margin-bottom:0.8rem;display:block">Preview</label>
+        <div id="preview-card" class="poll-card" style="pointer-events:none;margin-bottom:0"></div>
+      </div>
+
+      <div class="flex gap-2">
+        <button class="btn btn-outline" onclick="showPreview()">Preview</button>
+        <button class="btn btn-primary" onclick="submitPoll()" id="btn-submit" style="flex:1">Publish Poll</button>
+      </div>
+    </div>
+
+  </main>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script type="module">
+    import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc }
+                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // 🔧 Replace with your Firebase project config
+    const firebaseConfig = {
+      apiKey:            "YOUR_API_KEY",
+      authDomain:        "YOUR_PROJECT.firebaseapp.com",
+      projectId:         "YOUR_PROJECT_ID",
+      storageBucket:     "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId:             "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    const session = JSON.parse(localStorage.getItem('dv_candidate') || 'null');
+    if (!session) window.location.href = 'login.html';
+
+    const initial = session.name.charAt(0).toUpperCase();
+    document.getElementById('nav-initial').textContent            = initial;
+    document.getElementById('nav-name-text').textContent          = session.name;
+    document.getElementById('drawer-avatar-initials').textContent = initial;
+    document.getElementById('drawer-name').textContent            = session.name;
+    document.getElementById('drawer-fullname').textContent        = session.name;
+    document.getElementById('drawer-mobile').textContent          = '+91 ' + session.mobile;
+    document.getElementById('drawer-id').textContent              = session.id;
+
+    window.openDrawer  = () => {
+      document.getElementById('profile-drawer').classList.add('open');
+      document.getElementById('drawer-overlay').classList.add('open');
+    };
+    window.closeDrawer = () => {
+      document.getElementById('profile-drawer').classList.remove('open');
+      document.getElementById('drawer-overlay').classList.remove('open');
+    };
+    window.logout = function() {
+      localStorage.removeItem('dv_candidate');
+      window.location.href = 'login.html';
+    };
+
+    document.getElementById('poll-date').setAttribute('min', new Date().toISOString().split('T')[0]);
+
+    function toast(msg, type = 'info') {
+      const c = document.getElementById('toast-container');
+      const el = document.createElement('div');
+      el.className = `toast toast-${type}`;
+      el.innerHTML = `<span>${type==='success'?'✓':type==='error'?'✕':'ℹ'}</span> ${msg}`;
+      c.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }
+
+    let optionCount = 0;
+    const MAX = 10;
+
+    function buildOptionRow(idx) {
+      const row = document.createElement('div');
+      row.className = 'option-row'; row.id = 'opt-row-' + idx;
+      row.innerHTML = `<input type="text" id="opt-${idx}" placeholder="Option ${idx+1}" />
+        <button class="btn-remove-option" onclick="removeOption(${idx})" title="Remove">×</button>`;
+      return row;
+    }
+
+    (function() {
+      const list = document.getElementById('options-list');
+      list.appendChild(buildOptionRow(optionCount++));
+      list.appendChild(buildOptionRow(optionCount++));
+    })();
+
+    window.addOption = function() {
+      const list = document.getElementById('options-list');
+      if (list.children.length >= MAX) { toast(`Max ${MAX} options`, 'info'); return; }
+      list.appendChild(buildOptionRow(optionCount++));
+    };
+    window.removeOption = function(i) {
+      const list = document.getElementById('options-list');
+      if (list.children.length <= 2) { toast('At least 2 options required', 'info'); return; }
+      const row = document.getElementById('opt-row-' + i);
+      if (row) row.remove();
+    };
+
+    function getFormData() {
+      const title   = document.getElementById('poll-title').value.trim();
+      const date    = document.getElementById('poll-date').value;
+      const inputs  = document.querySelectorAll('#options-list input[type=text]');
+      const options = [...inputs].map(i => i.value.trim()).filter(Boolean);
+      return { title, date, options };
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    window.showPreview = function() {
+      const { title, date, options } = getFormData();
+      const section = document.getElementById('preview-section');
+      const card    = document.getElementById('preview-card');
+      const today2  = new Date(); today2.setHours(0,0,0,0);
+      const vDate   = date ? new Date(date) : null;
+      let statusHtml = '';
+      if (vDate) {
+        if (vDate.getTime() === today2.getTime())
+          statusHtml = '<span class="poll-status status-live">● Live</span>';
+        else if (vDate > today2)
+          statusHtml = '<span class="poll-status status-upcoming">Upcoming</span>';
+        else
+          statusHtml = '<span class="poll-status status-ended">Ended</span>';
+      }
+      const fmtDate = vDate
+        ? vDate.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })
+        : '—';
+      card.innerHTML = `
+        <div class="poll-card-title">${escHtml(title || 'Untitled Poll')}</div>
+        <ul class="poll-options-list">
+          ${options.length ? options.map(o=>`<li>${escHtml(o)}</li>`).join('') : '<li style="color:var(--muted)">No options yet</li>'}
+        </ul>
+        <div class="poll-meta">
+          <div class="poll-date">Voting: <strong>${fmtDate}</strong></div>
+          ${statusHtml}
+        </div>
+        <div class="poll-actions">
+          <span class="text-sm text-muted">by ${escHtml(session.name)} · ${session.id}</span>
+        </div>`;
+      section.style.display = 'block';
+      section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+
+    window.submitPoll = async function() {
+      const { title, date, options } = getFormData();
+      if (!title)         return toast('Poll title is required', 'error');
+      if (!date)          return toast('Voting date is required', 'error');
+      if (options.length < 2) return toast('At least 2 options required', 'error');
+      const btn = document.getElementById('btn-submit');
+      btn.innerHTML = '<span class="loader"></span> Publishing…'; btn.disabled = true;
+      const pollData = {
+        title, date, options,
+        candidateID: session.id, candidateName: session.name,
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+      };
+      try {
+        const docRef = await addDoc(collection(db, 'polls'), pollData);
+        const key    = 'dv_polls_cache_' + session.id;
+        const cached = JSON.parse(localStorage.getItem(key) || '[]');
+        cached.push({ docId: docRef.id, ...pollData });
+        localStorage.setItem(key, JSON.stringify(cached));
+        toast('Poll published successfully!', 'success');
+        setTimeout(() => window.location.href = 'home.html', 1200);
+      } catch(e) {
+        console.error(e); toast('Failed to publish. Check Firebase config.', 'error');
+        btn.innerHTML = 'Publish Poll'; btn.disabled = false;
+      }
+    };
+
+    ['poll-title','poll-date'].forEach(id =>
+      document.getElementById(id).addEventListener('input', () => {
+        if (document.getElementById('preview-section').style.display !== 'none') showPreview();
+      })
+    );
+    document.getElementById('options-list').addEventListener('input', () => {
+      if (document.getElementById('preview-section').style.display !== 'none') showPreview();
+    });
+    document.addEventListener("contextmenu", e => e.preventDefault());
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "F12") e.preventDefault();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DigiVote | Candidate</title>
+  <link rel="stylesheet" href="candidate.css" />
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-straight/css/uicons-solid-straight.css" />
+  <style>
+    /* ── HOME extra styles ── */
+    .navbar-left { display:flex; align-items:center; gap:1.4rem; }
+    .navbar-brand { display:flex; align-items:center; gap:0.5rem; font-family:'Trebuchet MS','Lucida Sans Unicode','Lucida Grande','Lucida Sans',Arial,sans-serif; }
+    .brand-hex { display:flex; align-items:center; font-size:1.3rem; background:linear-gradient(135deg,var(--candidate),var(--accent2)); -webkit-background-clip:text;  }
+    .brand-hex i { display:block; -webkit-text-fill-color: #f59e0b !important;}
+    .brand-name { font-weight:800; font-size:1.35rem; letter-spacing:-0.02em; background:linear-gradient(135deg,var(--candidate),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+
+    .nav-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--candidate), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; font-weight: 800; font-size: 0.95rem;
+      color: #fff; cursor: pointer; border: none;
+      box-shadow: 0 0 12px var(--cand-glow);
+      transition: transform 0.2s, box-shadow 0.2s; flex-shrink: 0;
+    }
+    .nav-avatar:hover { transform: scale(1.08); box-shadow: 0 0 20px var(--cand-glow); }
+
+    .profile-drawer {
+      position: fixed; top: 0; right: -320px; bottom: 0;
+      width: 300px; z-index: 200;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      box-shadow: -12px 0 40px rgba(0,0,0,0.5);
+      transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+      display: flex; flex-direction: column;
+      padding: 2rem 1.6rem;
+    }
+    .profile-drawer.open { right: 0; }
+    .drawer-overlay {
+      position: fixed; inset: 0; z-index: 199;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+      display: none;
+    }
+    .drawer-overlay.open { display: block; }
+    .drawer-close {
+      align-self: flex-end; background: none; border: none;
+      color: var(--muted); font-size: 1.4rem; cursor: pointer;
+      transition: color 0.2s; line-height: 1; margin-bottom: 1rem;
+    }
+    .drawer-close:hover { color: var(--text); }
+    .drawer-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--candidate), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; font-weight: 800; font-size: 1.8rem;
+      color: #fff; margin: 0 auto 0.8rem;
+      box-shadow: 0 0 24px var(--cand-glow);
+    }
+    .drawer-name {
+      text-align: center;
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; font-weight: 700; font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+    .drawer-role-badge {
+      display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+      margin: 0 auto 1.8rem;
+      padding: 0.25rem 0.9rem; border-radius: 99px;
+      border: 1px solid rgba(245,158,11,0.3);
+      background: rgba(245,158,11,0.08);
+      color: var(--candidate); font-size: 0.73rem;
+      font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      width: fit-content;
+    }
+    .drawer-divider { height:1px; background: var(--border); margin-bottom: 1.4rem; }
+    .drawer-info-item {
+      display: flex; align-items: flex-start; gap: 0.85rem;
+      padding: 0.7rem 0.8rem; border-radius: var(--radius-sm);
+      background: var(--surface2); margin-bottom: 0.6rem;
+    }
+    .drawer-info-icon {
+      width: 32px; height: 32px; border-radius: 8px; background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.95rem; flex-shrink: 0;
+    }
+    .drawer-info-label { font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.15rem; }
+    .drawer-info-value { font-size:0.9rem;font-weight:500;color:var(--text); }
+
+    .welcome-banner {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.8rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1.4rem; position: relative; overflow: hidden;
+    }
+    .welcome-banner::after {
+      content: ''; position: absolute; top: -30px; right: -30px;
+      width: 140px; height: 140px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .welcome-text .greeting { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.3rem; }
+    .welcome-text .wname {
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+      font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em;
+    }
+    .welcome-id-block { text-align: right; }
+    .welcome-id-label { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.3rem; }
+    .welcome-id-value {
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+      font-size: 1.35rem; font-weight: 800; color: var(--candidate); letter-spacing: 0.05em;
+    }
+
+    .stat-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-bottom: 1.4rem; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem 1rem;
+      text-align: center; cursor: default; transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: rgba(245,158,11,0.25); }
+    .stat-card .sc-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    .stat-card .sc-bar {
+      width: 28px; height: 3px; border-radius: 2px;
+      background: linear-gradient(90deg, var(--candidate), var(--accent2));
+      margin: 0.4rem auto 0.6rem;
+    }
+    .stat-card .sc-num {
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+      font-size: 1.6rem; font-weight: 800; color: var(--text);
+    }
+    .stat-card .sc-label { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.07em; text-transform: uppercase; }
+
+    .cta-banner {
+      background: linear-gradient(135deg, var(--candidate) 0%, var(--accent2) 100%);
+      border-radius: var(--radius); padding: 1.4rem 2rem;
+      display: flex; align-items: center; gap: 1.2rem;
+      cursor: pointer; text-decoration: none;
+      transition: opacity 0.2s, transform 0.2s; margin-bottom: 1.4rem;
+    }
+    .cta-banner:hover { opacity: 0.92; transform: translateY(-1px); }
+    .cta-banner .cta-icon { font-size: 2rem; flex-shrink: 0; }
+    .cta-banner .cta-title { font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; font-size: 1.1rem; font-weight: 700; color: #0b0e14; margin-bottom: 0.15rem; }
+    .cta-banner .cta-sub { font-size: 0.82rem; color: rgba(0,0,0,0.55); }
+
+    .info-notice {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem 1.4rem;
+      display: flex; align-items: center; gap: 0.9rem;
+      font-size: 0.85rem; color: var(--muted);
+    }
+    .info-notice .ni-icon {
+      width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
+      background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2);
+      display: flex; align-items: center; justify-content: center; font-size: 0.85rem;
+    }
+
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin: 2rem 0 1rem; }
+    .section-title { font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; font-size: 1.05rem; font-weight: 700; }
+
+    @media(max-width:600px){
+      .stat-cards { grid-template-columns: 1fr 1fr; }
+      .welcome-banner { flex-direction: column; gap: 1rem; }
+      .welcome-id-block { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navbar ── -->
+  <nav class="navbar">
+    <div class="navbar-left">
+      <a href="../index.html" style="font-size:0.8rem;color:var(--muted);text-decoration:none;transition:color 0.2s;"
+         onmouseover="this.style.color='#f59e0b'" onmouseout="this.style.color='var(--muted)'">← Home</a>
+      <a class="navbar-brand" style="color: #f59e0b;" href="home.html"><span class="brand-hex"><i class="fi fi-ss-vote-yea" style="color: #f59e0b;"></i></span> <span class="brand-name">DigiVote</span></a>
+    </div>
+    <div class="navbar-info">
+      <span id="nav-name-text" style="font-size:0.88rem;color:var(--muted)"></span>
+      <button class="nav-avatar" id="nav-avatar" onclick="openDrawer()" title="View profile">
+        <span id="nav-initial">?</span>
+      </button>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+  <div class="profile-drawer" id="profile-drawer">
+    <button class="drawer-close" onclick="closeDrawer()">×</button>
+    <div class="drawer-avatar" id="drawer-avatar-initials">?</div>
+    <div class="drawer-name"   id="drawer-name">—</div>
+    <div class="drawer-role-badge"><i class="fi fi-ss-vote-yea"></i> Registered Candidate</div>
+    <div class="drawer-divider"></div>
+    <div class="drawer-info-item">
+      <div class="drawer-info-icon">👤</div>
+      <div><div class="drawer-info-label">Full Name</div><div class="drawer-info-value" id="drawer-fullname">—</div></div>
+    </div>
+    <div class="drawer-info-item">
+      <div class="drawer-info-icon">📱</div>
+      <div><div class="drawer-info-label">Mobile</div><div class="drawer-info-value" id="drawer-mobile">—</div></div>
+    </div>
+    <div class="drawer-info-item">
+      <div class="drawer-info-icon">🪪</div>
+      <div><div class="drawer-info-label">Candidate ID</div><div class="drawer-info-value" id="drawer-id">—</div></div>
+    </div>
+    <div class="drawer-info-item">
+      <div class="drawer-info-icon">📍</div>
+      <div><div class="drawer-info-label">Location</div><div class="drawer-info-value" id="drawer-location">India</div></div>
+    </div>
+  </div>
+
+  <!-- ── Main ── -->
+  <main class="page-wrap" style="max-width:780px">
+
+    <div class="welcome-banner">
+      <div class="welcome-text">
+        <div class="greeting">Welcome back,</div>
+        <div class="wname" id="welcome-name">—</div>
+      </div>
+      <div class="welcome-id-block">
+        <div class="welcome-id-label">Candidate ID</div>
+        <div class="welcome-id-value" id="welcome-id">—</div>
+      </div>
+    </div>
+
+    <div class="stat-cards">
+      <div class="stat-card">
+        <div class="sc-icon">🗳</div>
+        <div class="sc-bar"></div>
+        <div class="sc-num" id="stat-total">—</div>
+        <div class="sc-label">Total Polls</div>
+      </div>
+      <div class="stat-card">
+        <div class="sc-icon">✅</div>
+        <div class="sc-bar"></div>
+        <div class="sc-num" id="stat-live">—</div>
+        <div class="sc-label">Live Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="sc-icon">⏳</div>
+        <div class="sc-bar"></div>
+        <div class="sc-num" id="stat-upcoming">—</div>
+        <div class="sc-label">Upcoming</div>
+      </div>
+    </div>
+
+    <a class="cta-banner" href="create_poll.html">
+      <div class="cta-icon">📋</div>
+      <div>
+        <div class="cta-title">Create a New Poll</div>
+        <div class="cta-sub">Set up a poll with title, options, and voting date</div>
+      </div>
+    </a>
+
+    <div class="info-notice">
+      <div class="ni-icon">ℹ</div>
+      <span>Polls are visible to all registered voters. Once a voter casts their vote, it cannot be changed.</span>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">My Polls</div>
+      <a href="create_poll.html" class="btn btn-outline btn-sm">+ New Poll</a>
+    </div>
+
+    <div id="polls-container">
+      <div class="empty-state">
+        <div class="icon">🗳</div>
+        <h3>Loading polls…</h3>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Edit Modal -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Edit Poll</div>
+        <button class="modal-close" onclick="closeEditModal()">×</button>
+      </div>
+      <input type="hidden" id="edit-poll-id" />
+      <div class="form-group">
+        <label>Poll Title</label>
+        <input type="text" id="edit-title" placeholder="Poll title" />
+      </div>
+      <div class="form-group">
+        <label>Voting Date</label>
+        <input type="date" id="edit-date" />
+      </div>
+      <div class="form-group">
+        <label>Options</label>
+        <div class="options-list" id="edit-options-list"></div>
+        <button class="btn-add-option" onclick="addEditOption()">+ Add option</button>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+        <button class="btn btn-primary"  onclick="saveEdit()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Delete Poll</div>
+        <button class="modal-close" onclick="closeDeleteModal()">×</button>
+      </div>
+      <p style="color:var(--muted)">Are you sure you want to delete <strong id="delete-poll-name" style="color:var(--text)"></strong>? This cannot be undone.</p>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+        <button class="btn btn-danger"  onclick="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore, collection, query, where,
+      getDocs, doc, updateDoc, deleteDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // 🔧 Replace with your Firebase project config
+    const firebaseConfig = {
+      apiKey:            "YOUR_API_KEY",
+      authDomain:        "YOUR_PROJECT.firebaseapp.com",
+      projectId:         "YOUR_PROJECT_ID",
+      storageBucket:     "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId:             "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    const session = JSON.parse(localStorage.getItem('dv_candidate') || 'null');
+    if (!session) { window.location.href = 'login.html'; }
+
+    const initial = session.name.charAt(0).toUpperCase();
+    document.getElementById('nav-initial').textContent            = initial;
+    document.getElementById('nav-name-text').textContent          = session.name;
+    document.getElementById('welcome-name').textContent           = session.name;
+    document.getElementById('welcome-id').textContent             = session.id;
+    document.getElementById('drawer-avatar-initials').textContent = initial;
+    document.getElementById('drawer-name').textContent            = session.name;
+    document.getElementById('drawer-fullname').textContent        = session.name;
+    document.getElementById('drawer-mobile').textContent          = '+91 ' + session.mobile;
+    document.getElementById('drawer-id').textContent              = session.id;
+
+    window.openDrawer  = () => {
+      document.getElementById('profile-drawer').classList.add('open');
+      document.getElementById('drawer-overlay').classList.add('open');
+    };
+    window.closeDrawer = () => {
+      document.getElementById('profile-drawer').classList.remove('open');
+      document.getElementById('drawer-overlay').classList.remove('open');
+    };
+    window.logout = function() {
+      localStorage.removeItem('dv_candidate');
+      window.location.href = 'login.html';
+    };
+
+    function toast(msg, type = 'info') {
+      const c = document.getElementById('toast-container');
+      const el = document.createElement('div');
+      el.className = `toast toast-${type}`;
+      el.innerHTML = `<span>${type==='success'?'✓':type==='error'?'✕':'ℹ'}</span> ${msg}`;
+      c.appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+
+    // ── IST-safe date helpers ──────────────────────────────────────────────────
+    // Returns local "YYYY-MM-DD" string — avoids UTC offset issues
+    function localToday() {
+      const n = new Date();
+      return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+    }
+
+    // Compare date strings directly (they're already "YYYY-MM-DD" — lexicographic = chronological)
+    function pollStatus(dateStr) {
+      if (!dateStr) return 'ended';
+      const today = localToday();
+      if (dateStr === today) return 'live';
+      if (dateStr  > today) return 'upcoming';
+      return 'ended';
+    }
+
+    function statusHtml(s) {
+      if (s === 'live')     return '<span class="poll-status status-live">● Live</span>';
+      if (s === 'upcoming') return '<span class="poll-status status-upcoming">Upcoming</span>';
+      return '<span class="poll-status status-ended">Ended</span>';
+    }
+
+    // Parse "YYYY-MM-DD" as local midnight (appending T00:00:00 forces local time, not UTC)
+    function fmtDate(d) {
+      if (!d) return '—';
+      return new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+    }
+
+    let allPolls = [];
+
+    async function loadPolls() {
+      try {
+        const q    = query(collection(db, 'polls'), where('candidateID', '==', session.id));
+        const snap = await getDocs(q);
+        allPolls   = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+      } catch(e) {
+        allPolls = JSON.parse(localStorage.getItem('dv_polls_cache_' + session.id) || '[]');
+      }
+
+      // Stats now use IST-safe pollStatus
+      const live     = allPolls.filter(p => pollStatus(p.date) === 'live').length;
+      const upcoming = allPolls.filter(p => pollStatus(p.date) === 'upcoming').length;
+      document.getElementById('stat-total').textContent    = allPolls.length;
+      document.getElementById('stat-live').textContent     = live;
+      document.getElementById('stat-upcoming').textContent = upcoming;
+
+      const container = document.getElementById('polls-container');
+      if (allPolls.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">🗳</div>
+            <h3>No polls yet</h3>
+            <p>Create your first poll to get started.</p>
+            <a href="create_poll.html" class="btn btn-primary mt-2" style="display:inline-flex">Create Poll</a>
+          </div>`;
+        return;
+      }
+      container.innerHTML = `<div class="polls-grid">${allPolls.map(renderCard).join('')}</div>`;
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function renderCard(poll) {
+      const s = pollStatus(poll.date);
+      return `
+      <div class="poll-card" id="card-${poll.docId}">
+        <div class="poll-card-title">${escHtml(poll.title)}</div>
+        <ul class="poll-options-list">${(poll.options||[]).map(o=>`<li>${escHtml(o)}</li>`).join('')}</ul>
+        <div class="poll-meta">
+          <div class="poll-date">Voting: <strong>${fmtDate(poll.date)}</strong></div>
+          ${statusHtml(s)}
+        </div>
+        <div class="poll-actions">
+          <button class="btn btn-edit btn-sm" onclick="openEditModal('${poll.docId}')">✏ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${poll.docId}', '${escHtml(poll.title)}')">🗑 Delete</button>
+        </div>
+      </div>`;
+    }
+
+    loadPolls();
+
+    /* edit */
+    let editingPoll = null;
+    window.openEditModal = function(docId) {
+      editingPoll = allPolls.find(p => p.docId === docId);
+      if (!editingPoll) return;
+      document.getElementById('edit-poll-id').value = docId;
+      document.getElementById('edit-title').value   = editingPoll.title;
+      document.getElementById('edit-date').value    = editingPoll.date;
+      const list = document.getElementById('edit-options-list');
+      list.innerHTML = (editingPoll.options||[]).map((o,i) => optRowHtml(o, i)).join('');
+      document.getElementById('edit-modal').classList.add('open');
+    };
+    window.closeEditModal = () => document.getElementById('edit-modal').classList.remove('open');
+
+    function optRowHtml(value, i) {
+      return `<div class="option-row" id="opt-row-${i}">
+        <input type="text" value="${escHtml(value)}" placeholder="Option ${i+1}" id="opt-${i}" />
+        <button class="btn-remove-option" onclick="removeOption(${i})">×</button>
+      </div>`;
+    }
+    window.addEditOption = function() {
+      const list = document.getElementById('edit-options-list');
+      list.insertAdjacentHTML('beforeend', optRowHtml('', list.children.length));
+    };
+    window.removeOption = function(i) {
+      const list = document.getElementById('edit-options-list');
+      if (list.children.length <= 2) { toast('At least 2 options required', 'info'); return; }
+      const row = document.getElementById('opt-row-' + i);
+      if (row) row.remove();
+    };
+    window.saveEdit = async function() {
+      const docId   = document.getElementById('edit-poll-id').value;
+      const title   = document.getElementById('edit-title').value.trim();
+      const date    = document.getElementById('edit-date').value;
+      const inputs  = document.querySelectorAll('#edit-options-list input[type=text]');
+      const options = [...inputs].map(i => i.value.trim()).filter(Boolean);
+      if (!title)             return toast('Title is required', 'error');
+      if (!date)              return toast('Date is required', 'error');
+      if (options.length < 2) return toast('At least 2 options needed', 'error');
+      try {
+        await updateDoc(doc(db, 'polls', docId), { title, date, options, updatedAt: new Date().toISOString() });
+        const idx = allPolls.findIndex(p => p.docId === docId);
+        if (idx > -1) Object.assign(allPolls[idx], { title, date, options });
+        saveCache(); closeEditModal(); toast('Poll updated!', 'success');
+        const card = document.getElementById('card-' + docId);
+        if (card) card.outerHTML = renderCard(allPolls.find(p => p.docId === docId));
+      } catch(e) { toast('Update failed', 'error'); console.error(e); }
+    };
+
+    /* delete */
+    let deletingDocId = null;
+    window.openDeleteModal = function(docId, title) {
+      deletingDocId = docId;
+      document.getElementById('delete-poll-name').textContent = title;
+      document.getElementById('delete-modal').classList.add('open');
+    };
+    window.closeDeleteModal = () => document.getElementById('delete-modal').classList.remove('open');
+    window.confirmDelete = async function() {
+      if (!deletingDocId) return;
+      try {
+        await deleteDoc(doc(db, 'polls', deletingDocId));
+        allPolls = allPolls.filter(p => p.docId !== deletingDocId);
+        saveCache(); closeDeleteModal(); toast('Poll deleted', 'success');
+        loadPolls();
+      } catch(e) { toast('Delete failed', 'error'); console.error(e); }
+    };
+
+    function saveCache() {
+      localStorage.setItem('dv_polls_cache_' + session.id, JSON.stringify(allPolls));
+    }
+
+    document.querySelectorAll('.modal-overlay').forEach(o =>
+      o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); })
+    );
+
+    document.addEventListener("contextmenu", e => e.preventDefault());
+    document.addEventListener("keydown", e => { if (e.key === "F12") e.preventDefault(); });
+  </script>
+</body>
+</html>
