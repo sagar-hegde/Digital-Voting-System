@@ -1,0 +1,550 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap');
+@import url('https://cdn-uicons.flaticon.com/uicons-solid-straight/css/uicons-solid-straight.css');
+
+:root {
+  --bg:           #0b0e14;
+  --surface:      #12161f;
+  --surface2:     #1a1f2e;
+  --border:       rgba(255,255,255,0.07);
+  --accent:       #f59e0b;
+  --accent2:      #f97316;
+  --candidate:    #f59e0b;
+  --cand-glow:    rgba(245,158,11,0.25);
+  --danger:       #ff4f6b;
+  --success:      #3ecf8e;
+  --warn:         #fbbf24;
+  --text:         #e8ecf4;
+  --muted:        #6b7590;
+  --radius:       14px;
+  --radius-sm:    8px;
+  --shadow:       0 8px 40px rgba(0,0,0,0.4);
+  --glow:         0 0 28px var(--cand-glow);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0;   font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ── Background mesh ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% 0%,  rgba(245,158,11,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(249,115,22,0.07) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────
+   NAVBAR
+───────────────────────────────────────── */
+.navbar {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2rem;
+  height: 64px;
+  background: rgba(11,14,20,0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+
+.navbar-brand {
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  font-weight: 800; font-size: 1.4rem;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--candidate), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  text-decoration: none;
+}
+
+.navbar-brand span { -webkit-text-fill-color: var(--text); }
+
+.navbar-info {
+  display: flex; align-items: center; gap: 1.2rem;
+}
+
+.nav-badge {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.3rem 0.9rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  font-size: 0.82rem; color: var(--muted);
+}
+
+.nav-badge strong { color: var(--text); font-weight: 500; }
+
+.nav-id {
+  font-size: 0.78rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 99px;
+  background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(249,115,22,0.15));
+  border: 1px solid rgba(245,158,11,0.3);
+  color: var(--candidate);
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  font-weight: 700; letter-spacing: 0.05em;
+}
+
+.btn-logout {
+  padding: 0.35rem 1rem;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.82rem; cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+/* ─────────────────────────────────────────
+   PAGE WRAPPER / LAYOUT
+───────────────────────────────────────── */
+.page-wrap {
+  position: relative; z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.page-header {
+  margin-bottom: 2.5rem;
+}
+
+.page-header h1 {
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 800; letter-spacing: -0.03em;
+}
+
+.page-header p { color: var(--muted); margin-top: 0.4rem; font-size: 0.95rem; }
+
+/* ─────────────────────────────────────────
+   CARD
+───────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+}
+
+.card + .card { margin-top: 1.5rem; }
+
+/* ─────────────────────────────────────────
+   FORM ELEMENTS
+───────────────────────────────────────── */
+.form-group { margin-bottom: 1.4rem; }
+
+label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+input[type="text"],
+input[type="tel"],
+input[type="password"],
+input[type="date"],
+textarea,
+select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--candidate);
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.14);
+}
+
+input::placeholder, textarea::placeholder { color: var(--muted); }
+
+textarea { resize: vertical; min-height: 90px; }
+
+/* ─────────────────────────────────────────
+   BUTTONS
+───────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  padding: 0.72rem 1.6rem;
+  border-radius: var(--radius-sm);
+  border: none; cursor: pointer;
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  font-size: 0.92rem; font-weight: 500;
+  transition: all 0.2s; text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--candidate);
+  color: #fff;
+  box-shadow: 0 4px 20px var(--cand-glow);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(245,158,11,0.45); color: #fff; background-color: #f97316;}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn-outline:hover { border-color: var(--candidate); color: var(--candidate); }
+
+.btn-danger {
+  background: rgba(255,79,107,0.12);
+  border: 1px solid rgba(255,79,107,0.25);
+  color: var(--danger);
+}
+.btn-danger:hover { background: rgba(255,79,107,0.22); }
+
+.btn-edit {
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.25);
+  color: var(--candidate);
+}
+.btn-edit:hover { background: rgba(245,158,11,0.2); }
+
+.btn-success {
+  background: linear-gradient(135deg, #3ecf8e, #27ae60);
+  color: #fff;
+}
+
+.btn-full { width: 100%; }
+.btn-sm { padding: 0.45rem 0.9rem; font-size: 0.82rem; border-radius: 6px; }
+
+/* ─────────────────────────────────────────
+   AUTH PAGE
+───────────────────────────────────────── */
+.auth-page {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 2rem 1rem;
+}
+
+.auth-box {
+  width: 100%; max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2.8rem 2.5rem;
+  box-shadow: var(--shadow), var(--glow);
+}
+
+.auth-logo {
+  text-align: center; margin-bottom: 2rem;
+}
+
+.auth-logo .brand {
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  font-size: 2rem; font-weight: 800;
+  background: linear-gradient(135deg, var(--candidate), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.auth-logo .sub {
+  font-size: 0.78rem; letter-spacing: 0.12em;
+  color: var(--muted); text-transform: uppercase; margin-top: 0.2rem;
+}
+
+.auth-tabs {
+  display: flex;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 2rem;
+  gap: 4px;
+}
+
+.auth-tab {
+  flex: 1; padding: 0.6rem;
+  border: none; border-radius: 6px;
+  background: transparent; color: var(--muted);
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  font-size: 0.88rem; font-weight: 500;
+  cursor: pointer; transition: all 0.2s;
+}
+
+.auth-tab.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.auth-form { display: none; }
+.auth-form.active { display: block; }
+
+/* ─────────────────────────────────────────
+   POLL CARDS (home)
+───────────────────────────────────────── */
+.polls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.2rem;
+}
+
+.poll-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  transition: border-color 0.2s, transform 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.poll-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--candidate), var(--accent2));
+  opacity: 0; transition: opacity 0.2s;
+}
+
+.poll-card:hover { border-color: rgba(245,158,11,0.35); transform: translateY(-2px); }
+.poll-card:hover::before { opacity: 1; }
+
+.poll-card-title {
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  font-size: 1.05rem; font-weight: 700;
+  margin-bottom: 0.8rem;
+  letter-spacing: -0.01em;
+}
+
+.poll-options-list {
+  list-style: none; margin-bottom: 1rem;
+}
+
+.poll-options-list li {
+  font-size: 0.85rem; color: var(--muted);
+  padding: 0.25rem 0;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+
+.poll-options-list li::before {
+  content: '›';
+  color: var(--candidate); font-weight: 700;
+}
+
+.poll-meta {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+}
+
+.poll-date { font-size: 0.8rem; color: var(--muted); }
+.poll-date strong { color: var(--warn); }
+
+.poll-status {
+  font-size: 0.72rem; font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+.status-upcoming  { background: rgba(79,158,255,0.12); color: var(--accent); }
+.status-live      { background: rgba(62,207,142,0.12); color: var(--success); }
+.status-ended     { background: rgba(107,117,144,0.12); color: var(--muted); }
+
+.poll-actions { display: flex; gap: 0.6rem; }
+
+/* ─────────────────────────────────────────
+   CREATE POLL
+───────────────────────────────────────── */
+.options-list { display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 0.8rem; }
+
+.option-row {
+  display: flex; gap: 0.6rem; align-items: center;
+}
+
+.option-row input { flex: 1; }
+
+.btn-remove-option {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--danger);
+  border-radius: 6px;
+  width: 36px; height: 36px;
+  cursor: pointer; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.btn-remove-option:hover { background: rgba(255,79,107,0.1); border-color: var(--danger); }
+
+.btn-add-option {
+  background: transparent; border: 1px dashed rgba(245,158,11,0.35);
+  color: var(--candidate); border-radius: 6px;
+  padding: 0.55rem 1rem;
+  cursor: pointer; font-size: 0.85rem;
+  width: 100%; transition: all 0.2s;
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+.btn-add-option:hover { background: rgba(245,158,11,0.07); border-color: var(--candidate); }
+
+/* ─────────────────────────────────────────
+   STATS STRIP (home)
+───────────────────────────────────────── */
+.stats-strip {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1rem; margin-bottom: 2rem;
+}
+
+.stat-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.4rem;
+  text-align: center;
+}
+
+.stat-num {
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  font-size: 2rem; font-weight: 800;
+  background: linear-gradient(135deg, var(--candidate), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem; }
+
+/* ─────────────────────────────────────────
+   TOAST
+───────────────────────────────────────── */
+.toast-container {
+  position: fixed; bottom: 2rem; right: 2rem;
+  z-index: 9999; display: flex; flex-direction: column; gap: 0.7rem;
+}
+
+.toast {
+  padding: 0.9rem 1.4rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem; font-weight: 500;
+  display: flex; align-items: center; gap: 0.6rem;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  animation: slideIn 0.3s ease; min-width: 240px;
+  border: 1px solid;
+}
+
+.toast-success { background: rgba(62,207,142,0.12); border-color: rgba(62,207,142,0.3); color: var(--success); }
+.toast-error   { background: rgba(255,79,107,0.12);  border-color: rgba(255,79,107,0.3);  color: var(--danger);  }
+.toast-info    { background: rgba(245,158,11,0.12);  border-color: rgba(245,158,11,0.3);  color: var(--candidate); }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ─────────────────────────────────────────
+   MODAL
+───────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center; padding: 1rem;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2.2rem 2rem;
+  width: 100%; max-width: 500px;
+  box-shadow: var(--shadow);
+  animation: popIn 0.25s ease;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.6rem;
+}
+.modal-title {
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  font-size: 1.2rem; font-weight: 700;
+}
+.modal-close {
+  background: transparent; border: none;
+  color: var(--muted); font-size: 1.4rem;
+  cursor: pointer; line-height: 1; transition: color 0.2s;
+}
+.modal-close:hover { color: var(--text); }
+.modal-footer { display: flex; gap: 0.8rem; justify-content: flex-end; margin-top: 1.5rem; }
+
+/* ─────────────────────────────────────────
+   EMPTY STATE
+───────────────────────────────────────── */
+.empty-state {
+  text-align: center; padding: 4rem 2rem;
+  color: var(--muted);
+}
+
+.empty-state .icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
+.empty-state h3 { font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; color: var(--text); margin-bottom: 0.5rem; }
+.empty-state p  { font-size: 0.9rem; }
+
+/* ─────────────────────────────────────────
+   MISC
+───────────────────────────────────────── */
+.divider {
+  height: 1px; background: var(--border);
+  margin: 1.5rem 0;
+}
+
+.text-muted  { color: var(--muted); }
+.text-accent { color: var(--accent); }
+.text-sm     { font-size: 0.85rem; }
+.text-center { text-align: center; }
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 0.8rem; }
+.w-full { width: 100%; }
+
+.loader {
+  display: inline-block;
+  width: 18px; height: 18px;
+  border: 2px solid rgba(245,158,11,0.2);
+  border-top-color: var(--candidate);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 600px) {
+  .navbar { padding: 0 1rem; }
+  .auth-box { padding: 2rem 1.4rem; }
+  .page-wrap { padding: 1.5rem 1rem 3rem; }
+  .stats-strip { grid-template-columns: 1fr 1fr; }
+  .polls-grid { grid-template-columns: 1fr; }
+  .navbar-info { gap: 0.6rem; }
+  .nav-badge { display: none; }
+}
