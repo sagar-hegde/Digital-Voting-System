@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DigiVote | Admin</title>
+  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-straight/css/uicons-solid-straight.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <a href="home.html" class="topbar-brand">
+    <span class="logo-icon"><i class="fi fi-ss-vote-yea"></i></span>
+    <span class="logo-name">DigiVote</span>
+  </a>
+  <div class="topbar-right">
+    <div class="topbar-user">
+      <span class="topbar-admin-label" id="admin-name-top">Admin</span>
+      <div class="user-avatar" id="admin-avatar">A</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<div class="admin-layout">
+  <nav class="sidebar">
+    <span class="sidebar-section-label">Navigation</span>
+    <a href="home.html"         class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a href="manage_users.html" class="nav-link"><span class="nav-icon">👥</span> Users</a>
+    <a href="manage_polls.html" class="nav-link active"><span class="nav-icon">📊</span> Polls</a>
+    <div class="sidebar-footer">
+      <a href="../index.html" class="back-btn" style="margin-bottom:10px;display:inline-flex">← Back to site</a>
+      <button class="btn btn-danger btn-block btn-sm" onclick="logout()">🚪 Sign Out</button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div class="page-title">Manage Polls</div>
+      <div class="page-subtitle">View, edit and delete voting polls</div>
+    </div>
+
+    <div class="search-bar">
+      <div class="search-input-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="form-control" type="text" id="search-input"
+               placeholder="Search polls by title…" oninput="filterPolls()" />
+      </div>
+      <span class="badge badge-blue" id="poll-count">0 polls</span>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Voting Date</th>
+            <th>Options</th>
+            <th>Total Votes</th>
+            <th>Result</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="polls-tbody">
+          <tr class="loading-row"><td colspan="8"><span class="spinner"></span> Loading polls…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Result Modal -->
+<div class="modal-overlay" id="result-modal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title">📊 Poll Results</div>
+    <div class="modal-subtitle" id="result-modal-subtitle">—</div>
+    <div id="result-winner-box" style="
+      display:none;
+      background:linear-gradient(135deg,rgba(34,197,94,0.12),rgba(16,185,129,0.08));
+      border:1px solid rgba(34,197,94,0.3);
+      border-radius:10px;
+      padding:14px 18px;
+      margin-bottom:16px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+    ">
+      <span style="font-size:1.8rem">🏆</span>
+      <div>
+        <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#22c55e;font-weight:700;margin-bottom:2px">Winner</div>
+        <div id="result-winner-name" style="font-size:1.1rem;font-weight:800;color:var(--text)">—</div>
+        <div id="result-winner-votes" style="font-size:0.8rem;color:var(--text-muted)">—</div>
+      </div>
+    </div>
+    <div id="result-bars" style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px"></div>
+    <div id="result-no-votes" style="display:none;text-align:center;padding:24px 0;color:var(--text-muted)">
+      <div style="font-size:2rem;margin-bottom:8px">🗳️</div>
+      <div>No votes cast yet</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeResultModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">Edit Poll</div>
+    <div class="modal-subtitle">Update poll details</div>
+    <input type="hidden" id="edit-poll-id" />
+    <div class="form-group">
+      <label class="form-label">Poll Title</label>
+      <input class="form-control" type="text" id="edit-title" placeholder="Poll title" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Voting Date</label>
+      <input class="form-control" type="date" id="edit-date" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
+      <button class="btn btn-primary" id="btn-save" onclick="savePoll()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal">
+    <div class="modal-title">Delete Poll</div>
+    <div class="modal-subtitle" id="delete-subtitle">This will permanently remove the poll.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">🗑 Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script type="module">
+  import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, query, where }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // 🔧 Replace with your Firebase project config
+  const firebaseConfig = {
+    apiKey:            "YOUR_API_KEY",
+    authDomain:        "YOUR_PROJECT.firebaseapp.com",
+    projectId:         "YOUR_PROJECT_ID",
+    storageBucket:     "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId:             "YOUR_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  const session = sessionStorage.getItem("adminSession");
+  if (!session) { window.location.href = "login.html"; }
+  else {
+    const a = JSON.parse(session);
+    document.getElementById("admin-name-top").textContent = a.name || a.mobile;
+    document.getElementById("admin-avatar").textContent   = (a.name||a.mobile)[0].toUpperCase();
+  }
+
+  let allPolls    = [];
+  let votesByPoll = {};
+
+  // ── IST-safe today string ─────────────────────────────────────────────────
+  function localToday() {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+  }
+
+  // Returns 0 = today, 1 = upcoming, 2 = ended
+  function statusRank(dateStr) {
+    if (!dateStr) return 2;
+    const today = localToday();
+    if (dateStr === today) return 0;
+    if (dateStr  > today)  return 1;
+    return 2;
+  }
+
+  async function loadPolls() {
+    const tbody = document.getElementById("polls-tbody");
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="8"><span class="spinner"></span> Loading…</td></tr>`;
+    try {
+      const [pollsSnap, votesSnap] = await Promise.all([
+        getDocs(collection(db, "polls")),
+        getDocs(collection(db, "votes"))
+      ]);
+
+      const voteCounts = {};
+      votesByPoll = {};
+      votesSnap.forEach(vd => {
+        const v     = vd.data();
+        const pid   = v.electionID;
+        const cid   = v.candidateID;
+        const cname = v.candidateName || cid || "Unknown";
+        if (!pid) return;
+        voteCounts[pid] = (voteCounts[pid] || 0) + 1;
+        if (!votesByPoll[pid]) votesByPoll[pid] = {};
+        if (!votesByPoll[pid][cid]) votesByPoll[pid][cid] = { name: cname, count: 0 };
+        votesByPoll[pid][cid].count++;
+      });
+
+      allPolls = [];
+      pollsSnap.forEach(d => allPolls.push({ id: d.id, _voteCount: voteCounts[d.id] || 0, ...d.data() }));
+
+      // ── Sort: today first → upcoming (earliest first) → ended (most recent first)
+      allPolls.sort((a, b) => {
+        const ra = statusRank(a.date);
+        const rb = statusRank(b.date);
+        if (ra !== rb) return ra - rb;                        // different groups
+        if (ra === 1)  return (a.date || "").localeCompare(b.date || ""); // upcoming: soonest first
+        if (ra === 2)  return (b.date || "").localeCompare(a.date || ""); // ended: most recent first
+        return 0;                                             // today: keep insertion order
+      });
+
+      renderTable(allPolls);
+    } catch(e) {
+      console.error(e);
+      tbody.innerHTML = `<tr class="loading-row"><td colspan="8">Error loading polls.</td></tr>`;
+    }
+  }
+
+  function renderTable(polls) {
+    const tbody = document.getElementById("polls-tbody");
+    document.getElementById("poll-count").textContent = `${polls.length} polls`;
+
+    const todayStr = localToday();
+
+    if (!polls.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📭</div><p>No polls found</p></div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = polls.map((p, i) => {
+      const d    = p.date || "";
+      const rank = statusRank(d);
+
+      const badge = rank === 0 ? '<span class="badge badge-green">● Active</span>'
+                  : rank === 1 ? '<span class="badge badge-yellow">⏳ Pending</span>'
+                  :              '<span class="badge badge-gray">Closed</span>';
+
+      const fmtDate = d ? new Date(d + 'T00:00:00').toLocaleDateString('en-IN') : '—';
+
+      const pollVotes = votesByPoll[p.id] || {};
+      const entries   = Object.values(pollVotes);
+      let resultCell  = '<span style="color:var(--text-muted);font-size:12px">No votes</span>';
+      if (entries.length > 0) {
+        const winner = entries.reduce((a, b) => a.count >= b.count ? a : b);
+        const isTie  = entries.filter(e => e.count === winner.count).length > 1;
+        resultCell = isTie
+          ? `<span style="font-size:12px;color:#f59e0b;font-weight:600">🤝 Tie</span>`
+          : `<div style="font-size:12px;font-weight:700;color:#22c55e">Winner - ${esc(winner.name)}</div>
+             <div style="font-size:11px;color:var(--text-muted)">${winner.count} vote${winner.count!==1?'s':''}</div>`;
+      }
+
+      return `<tr>
+        <td style="color:var(--text-muted)">${i+1}</td>
+        <td>
+          <div style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.title||"Untitled")}</div>
+          <div style="font-size:11px;color:var(--text-muted)">by ${esc(p.candidateName||"—")}</div>
+        </td>
+        <td>${badge}</td>
+        <td style="font-size:12px;color:var(--text-secondary)">${fmtDate}</td>
+        <td style="color:var(--admin);font-weight:700">${(p.options||[]).length}</td>
+        <td style="color:var(--admin);font-weight:700">${p._voteCount}</td>
+        <td>${resultCell}</td>
+        <td>
+          <div class="td-actions">
+            <button class="btn btn-ghost btn-sm" onclick='openResult("${p.id}","${esc(p.title||"Poll")}")' title="View full results">📊</button>
+            <button class="btn btn-ghost btn-sm" onclick='openEdit(${JSON.stringify(p).replace(/'/g,"&#39;")})'>✏️</button>
+            <button class="btn btn-danger btn-sm" onclick='openDelete("${p.id}","${esc(p.title||"this poll")}")'>🗑</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join("");
+  }
+
+  // ── Result Modal ──────────────────────────────────────────────────────────
+  window.openResult = function(pollID, title) {
+    document.getElementById("result-modal-subtitle").textContent = title;
+    const barsEl    = document.getElementById("result-bars");
+    const winnerBox = document.getElementById("result-winner-box");
+    const noVotesEl = document.getElementById("result-no-votes");
+    barsEl.innerHTML = "";
+    winnerBox.style.display = "none";
+    noVotesEl.style.display = "none";
+
+    const pollVotes  = votesByPoll[pollID] || {};
+    const total      = Object.values(pollVotes).reduce((s, e) => s + e.count, 0);
+    const poll       = allPolls.find(p => p.id === pollID);
+    const allOptions = (poll?.options || []).map((name, idx) => {
+      const found = pollVotes[`opt_${idx}`];
+      return { name, count: found ? found.count : 0 };
+    }).sort((a, b) => b.count - a.count);
+
+    const displayList = allOptions.length > 0 ? allOptions : Object.values(pollVotes).sort((a,b) => b.count - a.count);
+
+    if (total === 0) {
+      noVotesEl.style.display = "block";
+    } else {
+      const winner = displayList[0];
+      const isTie  = displayList.filter(e => e.count === winner.count).length > 1;
+      winnerBox.style.display = "flex";
+      if (isTie) {
+        document.getElementById("result-winner-name").textContent  = "It's a Tie!";
+        document.getElementById("result-winner-votes").textContent = `${winner.count} votes each`;
+        winnerBox.style.background  = "linear-gradient(135deg,rgba(245,158,11,0.12),rgba(234,179,8,0.08))";
+        winnerBox.style.borderColor = "rgba(245,158,11,0.3)";
+        winnerBox.querySelector("span").textContent = "🤝";
+        winnerBox.querySelector("div > div:first-child").style.color = "#f59e0b";
+      } else {
+        document.getElementById("result-winner-name").textContent  = winner.name;
+        document.getElementById("result-winner-votes").textContent = `${winner.count} of ${total} votes (${Math.round(winner.count/total*100)}%)`;
+        winnerBox.style.background  = "linear-gradient(135deg,rgba(34,197,94,0.12),rgba(16,185,129,0.08))";
+        winnerBox.style.borderColor = "rgba(34,197,94,0.3)";
+        winnerBox.querySelector("span").textContent = "🏆";
+        winnerBox.querySelector("div > div:first-child").style.color = "#22c55e";
+      }
+      displayList.forEach((opt, idx) => {
+        const pct      = total > 0 ? Math.round(opt.count / total * 100) : 0;
+        const isWinner = !isTie && idx === 0;
+        const bar      = document.createElement("div");
+        bar.style.cssText = "display:flex;flex-direction:column;gap:4px";
+        bar.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:0.85rem;font-weight:${isWinner?'700':'500'};color:${isWinner?'var(--text)':'var(--text-secondary)'}">${esc(opt.name)}</span>
+            <span style="font-size:0.8rem;color:var(--text-muted);font-weight:600">${opt.count} vote${opt.count!==1?'s':''} · ${pct}%</span>
+          </div>
+          <div style="height:8px;background:var(--surface2,#1e293b);border-radius:99px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${isWinner?'linear-gradient(90deg,#22c55e,#16a34a)':'linear-gradient(90deg,#3b82f6,#6366f1)'};border-radius:99px;transition:width 0.6s ease"></div>
+          </div>`;
+        barsEl.appendChild(bar);
+      });
+    }
+    document.getElementById("result-modal").classList.add("open");
+  };
+
+  window.closeResultModal = function() {
+    document.getElementById("result-modal").classList.remove("open");
+  };
+
+  window._loadPolls   = loadPolls;
+  window._renderTable = renderTable;
+  window._getAllPolls  = () => allPolls;
+  window._db          = db;
+  window._fbDoc       = doc;
+  window._fbDeleteDoc = deleteDoc;
+  window._fbUpdateDoc = updateDoc;
+
+  loadPolls();
+</script>
+
+<script>
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function filterPolls() {
+  const q = document.getElementById("search-input").value.toLowerCase();
+  window._renderTable(window._getAllPolls().filter(p =>
+    (p.title||"").toLowerCase().includes(q) || (p.candidateName||"").toLowerCase().includes(q)
+  ));
+}
+
+function openEdit(p) {
+  document.getElementById("edit-poll-id").value = p.id;
+  document.getElementById("edit-title").value   = p.title || "";
+  document.getElementById("edit-date").value    = p.date  || "";
+  document.getElementById("edit-modal").classList.add("open");
+}
+function closeEditModal() { document.getElementById("edit-modal").classList.remove("open"); }
+
+async function savePoll() {
+  const id    = document.getElementById("edit-poll-id").value;
+  const title = document.getElementById("edit-title").value.trim();
+  const date  = document.getElementById("edit-date").value;
+  if (!title) return showToast("Title is required", "error");
+  if (!date)  return showToast("Voting date is required", "error");
+
+  const btn = document.getElementById("btn-save");
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving…';
+  try {
+    await window._fbUpdateDoc(window._fbDoc(window._db, "polls", id), {
+      title, date, updatedAt: new Date().toISOString()
+    });
+    showToast("Poll updated", "success");
+    closeEditModal();
+    window._loadPolls();
+  } catch(e) { console.error(e); showToast("Save failed", "error"); }
+  finally { btn.disabled = false; btn.innerHTML = "Save Changes"; }
+}
+
+function openDelete(id, title) {
+  window._pendingDeleteId = id;
+  document.getElementById("delete-subtitle").textContent = `Permanently delete "${title}"? This cannot be undone.`;
+  document.getElementById("delete-modal").classList.add("open");
+}
+function closeDeleteModal() { document.getElementById("delete-modal").classList.remove("open"); }
+
+async function confirmDelete() {
+  const id = window._pendingDeleteId;
+  if (!id) return;
+  closeDeleteModal();
+  try {
+    await window._fbDeleteDoc(window._fbDoc(window._db, "polls", id));
+    showToast("Poll deleted", "success");
+    window._loadPolls();
+  } catch(e) { console.error(e); showToast("Delete failed", "error"); }
+}
+
+function showToast(msg, type = "info") {
+  const c = document.getElementById("toast-container");
+  const d = document.createElement("div");
+  d.className = `toast ${type}`;
+  d.innerHTML = `<span class="toast-dot"></span>${msg}`;
+  c.appendChild(d);
+  setTimeout(() => d.remove(), 3100);
+}
+
+document.addEventListener("contextmenu", e => e.preventDefault());
+document.addEventListener("keydown", e => { if (e.key === "F12") e.preventDefault(); });
+
+function logout() { sessionStorage.removeItem("adminSession"); window.location.href = "login.html"; }
+
+window.filterPolls      = filterPolls;
+window.openEdit         = openEdit;
+window.closeEditModal   = closeEditModal;
+window.savePoll         = savePoll;
+window.openDelete       = openDelete;
+window.closeDeleteModal = closeDeleteModal;
+window.confirmDelete    = confirmDelete;
+window.logout           = logout;
+</script>
+</body>
+</html>

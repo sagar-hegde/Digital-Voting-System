@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DigiVote | Admin</title>
+  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-straight/css/uicons-solid-straight.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <a href="home.html" class="topbar-brand">
+    <span class="logo-icon"><i class="fi fi-ss-vote-yea"></i></span>
+    <span class="logo-name">DigiVote</span>
+  </a>
+  <div class="topbar-right">
+    <div class="topbar-user">
+      <span class="topbar-admin-label" id="admin-name-top">Admin</span>
+      <div class="user-avatar" id="admin-avatar">A</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<div class="admin-layout">
+  <nav class="sidebar">
+    <span class="sidebar-section-label">Navigation</span>
+    <a href="home.html"         class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a href="manage_users.html" class="nav-link active"><span class="nav-icon">👥</span> Users</a>
+    <a href="manage_polls.html" class="nav-link"><span class="nav-icon">📊</span> Polls</a>
+    <div class="sidebar-footer">
+      <a href="../index.html" class="back-btn" style="margin-bottom:10px;display:inline-flex">← Back to site</a>
+      <button class="btn btn-danger btn-block btn-sm" onclick="logout()">🚪 Sign Out</button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div class="page-title">Manage Users</div>
+      <div class="page-subtitle">View, block, or delete voters and candidates</div>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tab-voters"     onclick="switchTab('voters')">🗳 Voters</button>
+      <button class="tab-btn"        id="tab-candidates" onclick="switchTab('candidates')">🏛 Candidates</button>
+    </div>
+
+    <div class="search-bar">
+      <div class="search-input-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="form-control" type="text" id="search-input"
+               placeholder="Search by name or mobile…" oninput="filterTable()" />
+      </div>
+      <span class="badge badge-green" id="user-count">0 users</span>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Mobile</th>
+            <th>Status</th>
+            <th>Registered</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody">
+          <tr class="loading-row"><td colspan="6"><span class="spinner"></span> Loading users…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Confirm Action</div>
+    <div class="modal-subtitle" id="modal-subtitle">Are you sure?</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" id="modal-confirm-btn" onclick="confirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script type="module">
+  import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, query, where }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // 🔧 Replace with your Firebase project config
+  const firebaseConfig = {
+    apiKey:            "YOUR_API_KEY",
+    authDomain:        "YOUR_PROJECT.firebaseapp.com",
+    projectId:         "YOUR_PROJECT_ID",
+    storageBucket:     "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId:             "YOUR_APP_ID"
+  };
+
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  const session = sessionStorage.getItem("adminSession");
+  if (!session) { window.location.href = "login.html"; }
+  else {
+    const a = JSON.parse(session);
+    document.getElementById("admin-name-top").textContent = a.name || a.mobile;
+    document.getElementById("admin-avatar").textContent   = (a.name||a.mobile)[0].toUpperCase();
+  }
+
+  let allUsers = [];
+  let currentTab = "voters";
+
+  async function loadUsers(role) {
+    currentTab = role;
+    const tbody = document.getElementById("users-tbody");
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="6"><span class="spinner"></span> Loading…</td></tr>`;
+    try {
+      // Read from the actual collection: "voters" or "candidates"
+      const collectionName = role === "voters" ? "voters" : "candidates";
+      const snap = await getDocs(collection(db, collectionName));
+      allUsers = [];
+      snap.forEach(d => allUsers.push({ id: d.id, ...d.data() }));
+      renderTable(allUsers);
+    } catch(e) {
+      console.error(e);
+      tbody.innerHTML = `<tr class="loading-row"><td colspan="6">Error loading users.</td></tr>`;
+    }
+  }
+
+  function renderTable(users) {
+    const tbody = document.getElementById("users-tbody");
+    document.getElementById("user-count").textContent = `${users.length} users`;
+    if (!users.length) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">👤</div><p>No ${currentTab} found</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = users.map((u,i) => `
+      <tr>
+        <td style="color:var(--text-muted)">${i+1}</td>
+        <td><div style="font-weight:600">${esc(u.name||"—")}</div>${u.email?`<div style="font-size:11px;color:var(--text-muted)">${esc(u.email)}</div>`:""}</td>
+        <td style="font-family:monospace;color:var(--admin)">${esc(u.mobile||u.id||"—")}</td>
+        <td>${u.blocked?'<span class="badge badge-red">🚫 Blocked</span>':'<span class="badge badge-green">✅ Active</span>'}</td>
+        <td style="color:var(--text-muted);font-size:12px">${formatDate(u.createdAt)}</td>
+        <td>
+          <div class="td-actions">
+            <button class="btn btn-warning btn-sm" onclick='setPending(${JSON.stringify({type:u.blocked?"unblock":"block",id:u.id,name:u.name||u.id})})'>
+              ${u.blocked?"✅ Unblock":"🚫 Block"}
+            </button>
+            <button class="btn btn-danger btn-sm" onclick='setPending(${JSON.stringify({type:"delete",id:u.id,name:u.name||u.id})})'>
+              🗑 Delete
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  window._loadUsers    = loadUsers;
+  window._renderTable  = renderTable;
+  window._getUsers     = () => allUsers;
+  window._getCurrentTab = () => currentTab;
+  window._db           = db;
+  window._fbDoc        = doc;
+  window._fbDeleteDoc  = deleteDoc;
+  window._fbUpdateDoc  = updateDoc;
+
+  loadUsers("voters");
+</script>
+
+<script>
+function formatDate(val) {
+  if (!val) return "—";
+  try {
+    let d;
+    if (typeof val.toDate === "function") d = val.toDate();
+    else if (val.seconds)                 d = new Date(val.seconds * 1000);
+    else                                  d = new Date(String(val));
+    if (isNaN(d)) return "—";
+    const dd   = String(d.getDate()).padStart(2,"0");
+    const mm   = String(d.getMonth() + 1).padStart(2,"0");
+    const yyyy = d.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  } catch(e) { return "—"; }
+}
+
+function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function switchTab(tab) {
+  document.getElementById("tab-voters").classList.toggle("active",     tab==="voters");
+  document.getElementById("tab-candidates").classList.toggle("active", tab==="candidates");
+  document.getElementById("search-input").value = "";
+  window._loadUsers(tab);
+}
+
+function filterTable() {
+  const q = document.getElementById("search-input").value.toLowerCase();
+  window._renderTable(window._getUsers().filter(u=>
+    (u.name||"").toLowerCase().includes(q)||(u.mobile||"").toLowerCase().includes(q)||(u.id||"").toLowerCase().includes(q)
+  ));
+}
+
+function setPending(action) {
+  window._pendingAction = action;
+  const labels = { delete:"Delete User", block:"Block User", unblock:"Unblock User" };
+  const subs   = {
+    delete:  `Permanently delete ${action.name}? This cannot be undone.`,
+    block:   `Prevent ${action.name} from accessing the platform?`,
+    unblock: `Restore ${action.name}'s access to the platform?`
+  };
+  document.getElementById("modal-title").textContent    = labels[action.type];
+  document.getElementById("modal-subtitle").textContent = subs[action.type];
+  document.getElementById("modal-confirm-btn").className = action.type==="delete"?"btn btn-danger":"btn btn-warning";
+  document.getElementById("modal-confirm-btn").textContent = labels[action.type];
+  document.getElementById("confirm-modal").classList.add("open");
+}
+
+function closeModal() {
+  document.getElementById("confirm-modal").classList.remove("open");
+  window._pendingAction = null;
+}
+
+async function confirmAction() {
+  const a = window._pendingAction;
+  if (!a) return;
+  closeModal();
+  try {
+    const collectionName = window._getCurrentTab() === "voters" ? "voters" : "candidates";
+    const ref = window._fbDoc(window._db, collectionName, a.id);
+    if      (a.type==="delete")  await window._fbDeleteDoc(ref);
+    else if (a.type==="block")   await window._fbUpdateDoc(ref,{blocked:true});
+    else if (a.type==="unblock") await window._fbUpdateDoc(ref,{blocked:false});
+    showToast(`${a.name} ${a.type}d`, "success");
+    window._loadUsers(window._getCurrentTab());
+  } catch(e) { console.error(e); showToast("Action failed","error"); }
+}
+
+function showToast(msg, type="info") {
+  const c=document.getElementById("toast-container");
+  const d=document.createElement("div");
+  d.className=`toast ${type}`;
+  d.innerHTML=`<span class="toast-dot"></span>${msg}`;
+  c.appendChild(d);
+  setTimeout(()=>d.remove(),3100);
+}
+document.addEventListener("contextmenu", e => e.preventDefault());
+
+document.addEventListener("keydown", e => {
+  if (e.key === "F12") e.preventDefault();
+});
+function logout() { sessionStorage.removeItem("adminSession"); window.location.href="login.html"; }
+
+window.switchTab=switchTab; window.filterTable=filterTable;
+window.setPending=setPending; window.closeModal=closeModal;
+window.confirmAction=confirmAction; window.logout=logout;
+</script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DigiVote | Admin</title>
+  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-straight/css/uicons-solid-straight.css" />
+</head>
+<body>
+
+<div class="auth-page">
+
+  <!-- ── LEFT PANEL ── -->
+  <div class="auth-left">
+    <div class="auth-left-back">
+      <a href="../index.html" class="back-btn">← Back</a>
+    </div>
+
+    <div class="auth-left-brand">
+      <div class="brand-logo">
+        <span class="logo-icon"><i class="fi fi-ss-vote-yea"></i></span>
+        <span class="logo-name">DigiVote</span>
+      </div>
+
+      <div class="auth-headline">
+        Your democracy,<br><span class="accent">your duty.</span>
+      </div>
+
+      <p class="auth-tagline">
+        Oversee the election process, manage voters and candidates, and publish results.
+      </p>
+
+      <ul class="auth-features">
+        <li>Election management</li>
+        <li>User verification</li>
+        <li>Audit &amp; reports</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── RIGHT PANEL ── -->
+  <div class="auth-right">
+    <a href="../index.html" class="mobile-back-link">← Back</a>
+    <div class="auth-right-inner">
+      <!-- Portal chip -->
+      <div class="auth-portal-chip">
+        <span>🛡️</span>
+        Admin Portal
+      </div><br>
+
+      <!-- Toggle tabs -->
+      <div class="auth-toggle">
+        <button class="auth-toggle-btn active" id="tab-login"  onclick="switchTab('login')">Login</button>
+        <button class="auth-toggle-btn"        id="tab-signup" onclick="switchTab('signup')">Sign Up</button>
+      </div>
+
+      <!-- ── LOGIN ── -->
+      <div class="auth-form-panel active" id="form-login">
+        <div class="form-group">
+          <label class="form-label">Mobile Number</label>
+          <div class="phone-input-wrap">
+            <span class="phone-prefix">+91</span>
+            <input class="form-control" type="tel" id="login-mobile"
+                   placeholder="10-digit number" maxlength="10" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="pwd-wrap">
+            <input class="form-control" type="password" id="login-password"
+                   placeholder="Enter password" />
+            <span class="pwd-eye" onclick="togglePwd('login-password', this)">👁</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="btn-login" onclick="handleLogin()">
+          Login
+        </button>
+
+        <div class="auth-link-row">
+          Don't have an account? <a href="#" onclick="switchTab('signup');return false;">Sign Up</a>
+        </div>
+      </div>
+
+      <!-- ── SIGN UP ── -->
+      <div class="auth-form-panel" id="form-signup">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input class="form-control" type="text" id="signup-name" placeholder="Admin full name" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Mobile Number</label>
+          <div class="phone-input-wrap">
+            <span class="phone-prefix">+91</span>
+            <input class="form-control" type="tel" id="signup-mobile"
+                   placeholder="10-digit number" maxlength="10" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="pwd-wrap">
+            <input class="form-control" type="password" id="signup-password"
+                   placeholder="Min 6 characters" />
+            <span class="pwd-eye" onclick="togglePwd('signup-password', this)">👁</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <div class="pwd-wrap">
+            <input class="form-control" type="password" id="signup-confirm"
+                   placeholder="Re-enter password" />
+          </div>
+        </div>
+
+        <!-- Superadmin key field -->
+        <div class="form-group">
+          <label class="form-label">Superadmin Key</label>
+          <div class="pwd-wrap">
+            <input class="form-control" type="password" id="signup-secret"
+                   placeholder="Enter key provided by superadmin" />
+            <span class="pwd-eye" onclick="togglePwd('signup-secret', this)">👁</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="btn-signup" onclick="handleSignup()">
+          Create Account
+        </button>
+
+        <div class="auth-link-row">
+          Already have an account? <a href="#" onclick="switchTab('login');return false;">Login</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // 🔧 Replace with your Firebase project config
+  const firebaseConfig = {
+    apiKey:            "YOUR_API_KEY",
+    authDomain:        "YOUR_PROJECT.firebaseapp.com",
+    projectId:         "YOUR_PROJECT_ID",
+    storageBucket:     "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId:             "YOUR_APP_ID"
+  };
+
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  if (sessionStorage.getItem("adminSession")) window.location.href = "home.html";
+
+  window._db       = db;
+  window._fbDoc    = doc;
+  window._fbSetDoc = setDoc;
+  window._fbGetDoc = getDoc;
+</script>
+
+<script>
+const SUPERADMIN_KEY = "YO!ADMIN";
+
+/* ── Enter key support ──────────────────────────────────────────────────── */
+document.addEventListener("DOMContentLoaded", () => {
+  // Login fields → trigger handleLogin on Enter
+  ["login-mobile", "login-password"].forEach(id => {
+    document.getElementById(id).addEventListener("keydown", e => {
+      if (e.key === "Enter") handleLogin();
+    });
+  });
+
+  // Signup fields → trigger handleSignup on Enter
+  ["signup-name", "signup-mobile", "signup-password", "signup-confirm", "signup-secret"].forEach(id => {
+    document.getElementById(id).addEventListener("keydown", e => {
+      if (e.key === "Enter") handleSignup();
+    });
+  });
+});
+
+/* ── Tab switch ─────────────────────────────────────────────────────────── */
+function switchTab(tab) {
+  document.getElementById("form-login").classList.toggle("active",  tab === "login");
+  document.getElementById("form-signup").classList.toggle("active", tab === "signup");
+  document.getElementById("tab-login").classList.toggle("active",   tab === "login");
+  document.getElementById("tab-signup").classList.toggle("active",  tab === "signup");
+}
+
+function togglePwd(id, icon) {
+  const el = document.getElementById(id);
+  const show = el.type === "password";
+  el.type = show ? "text" : "password";
+  icon.textContent = show ? "🙈" : "👁";
+}
+
+async function hashPwd(pwd) {
+  const buf  = new TextEncoder().encode(pwd);
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,"0")).join("");
+}
+
+function generateAdminId() {
+  const digits = Math.floor(100 + Math.random() * 900);
+  return "AD" + digits;
+}
+
+function setLoading(btnId, on, label) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = on;
+  btn.innerHTML = on ? '<span class="spinner"></span> Please wait…' : label;
+}
+
+function showToast(msg, type = "info") {
+  const c = document.getElementById("toast-container");
+  const d = document.createElement("div");
+  d.className = `toast ${type}`;
+  d.innerHTML = `<span class="toast-dot"></span>${msg}`;
+  c.appendChild(d);
+  setTimeout(() => d.remove(), 3100);
+}
+
+/* ── Login ──────────────────────────────────────────────────────────────── */
+async function handleLogin() {
+  const mobile = document.getElementById("login-mobile").value.trim().replace(/\D/g,"");
+  const pwd    = document.getElementById("login-password").value;
+  if (mobile.length < 10) return showToast("Enter a valid 10-digit mobile number", "error");
+  if (!pwd)               return showToast("Password is required", "error");
+
+  setLoading("btn-login", true, "Login");
+  try {
+    const snap = await window._fbGetDoc(window._fbDoc(window._db, "admins", mobile));
+    if (!snap.exists()) { showToast("No admin account found", "error"); return setLoading("btn-login", false, "Login"); }
+    const data = snap.data();
+    if (data.blocked)                             { showToast("Account is blocked", "error");  return setLoading("btn-login", false, "Login"); }
+    if (data.passwordHash !== await hashPwd(pwd)) { showToast("Incorrect password", "error");  return setLoading("btn-login", false, "Login"); }
+
+    sessionStorage.setItem("adminSession", JSON.stringify({ mobile, name: data.name, adminId: data.adminId }));
+    showToast("Login successful!", "success");
+    setTimeout(() => window.location.href = "home.html", 700);
+  } catch(e) {
+    console.error(e);
+    showToast("Login failed — check Firebase config", "error");
+    setLoading("btn-login", false, "Login");
+  }
+}
+
+/* ── Signup ─────────────────────────────────────────────────────────────── */
+async function handleSignup() {
+  const name    = document.getElementById("signup-name").value.trim();
+  const mobile  = document.getElementById("signup-mobile").value.trim().replace(/\D/g,"");
+  const pwd     = document.getElementById("signup-password").value;
+  const confirm = document.getElementById("signup-confirm").value;
+  const secret  = document.getElementById("signup-secret").value.trim();
+
+  if (!name)                     return showToast("Full name is required", "error");
+  if (mobile.length < 10)        return showToast("Enter a valid 10-digit mobile number", "error");
+  if (pwd.length < 6)            return showToast("Password must be at least 6 characters", "error");
+  if (pwd !== confirm)           return showToast("Passwords do not match", "error");
+  if (secret !== SUPERADMIN_KEY) return showToast("Invalid superadmin key", "error");
+
+  setLoading("btn-signup", true, "Create Account");
+  try {
+    const ref  = window._fbDoc(window._db, "admins", mobile);
+    const snap = await window._fbGetDoc(ref);
+    if (snap.exists()) { showToast("Account already exists for this number", "error"); return setLoading("btn-signup", false, "Create Account"); }
+
+    const adminId = generateAdminId();
+    await window._fbSetDoc(ref, {
+      name, mobile, adminId,
+      passwordHash: await hashPwd(pwd),
+      role: "admin", blocked: false,
+      createdAt: new Date().toISOString()
+    });
+
+    // Store session and redirect directly to home
+    sessionStorage.setItem("adminSession", JSON.stringify({ mobile, name, adminId }));
+    showToast(`Welcome, ${name}! Admin ID: ${adminId}`, "success");
+    setTimeout(() => window.location.href = "home.html", 900);
+
+  } catch(e) {
+    console.error(e);
+    showToast("Signup failed — check Firebase config", "error");
+    setLoading("btn-signup", false, "Create Account");
+  }
+}
+
+document.addEventListener("contextmenu", e => e.preventDefault());
+
+document.addEventListener("keydown", e => {
+  if (e.key === "F12") e.preventDefault();
+});
+
+window.switchTab    = switchTab;
+window.togglePwd    = togglePwd;
+window.handleLogin  = handleLogin;
+window.handleSignup = handleSignup;
+</script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DigiVote | Admin</title>
+  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-straight/css/uicons-solid-straight.css" />
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <a href="home.html" class="topbar-brand">
+    <span class="logo-icon"><i class="fi fi-ss-vote-yea"></i></span>
+    <span class="logo-name">DigiVote</span>
+  </a>
+  <div class="topbar-right">
+    <div class="topbar-user">
+      <span class="topbar-admin-label" id="admin-name-top">Admin</span>
+      <div class="user-avatar" id="admin-avatar">A</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<div class="admin-layout">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <span class="sidebar-section-label">Navigation</span>
+    <a href="home.html"         class="nav-link active"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a href="manage_users.html" class="nav-link"><span class="nav-icon">👥</span> Users</a>
+    <a href="manage_polls.html" class="nav-link"><span class="nav-icon">📊</span> Polls</a>
+    <div class="sidebar-footer">
+      <a href="../index.html" class="back-btn" style="margin-bottom:10px;display:inline-flex">← Back to site</a>
+      <button class="btn btn-danger btn-block btn-sm" onclick="logout()">🚪 Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <!-- Welcome banner (like reference) -->
+    <div class="welcome-banner">
+      <div class="welcome-text">
+        <div class="label">Welcome back,</div>
+        <div class="name" id="admin-name-banner">Admin</div>
+      </div>
+      <div class="welcome-id">
+        <div class="id-label">Admin ID</div>
+        <div class="id-value" id="admin-id-display">ADM0001</div>
+      </div>
+    </div>
+
+    <!-- Stat cards (icon-centred, like reference) -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card-icon">🗳️</div>
+        <div class="stat-underline"></div>
+        <div class="stat-value" id="count-voters">—</div>
+        <div class="stat-label">Total Voters</div>
+      </div>
+      <div class="stat-card info">
+        <div class="stat-card-icon">🏛️</div>
+        <div class="stat-underline"></div>
+        <div class="stat-value" id="count-candidates">—</div>
+        <div class="stat-label">Candidates</div>
+      </div>
+      <div class="stat-card warning">
+        <div class="stat-card-icon">📊</div>
+        <div class="stat-underline"></div>
+        <div class="stat-value" id="count-polls">—</div>
+        <div class="stat-label">Total Polls</div>
+      </div>
+      <div class="stat-card danger">
+        <div class="stat-card-icon">🚫</div>
+        <div class="stat-underline"></div>
+        <div class="stat-value" id="count-blocked">—</div>
+        <div class="stat-label">Blocked</div>
+      </div>
+    </div>
+
+    <!-- CTA banners (like reference "Go to Voting Booth") -->
+    <a href="manage_users.html" class="cta-banner">
+      <div class="cta-banner-icon">👥</div>
+      <div class="cta-banner-text">
+        <div class="cta-title">Manage Voters &amp; Candidates</div>
+        <div class="cta-sub">View, block or delete user accounts</div>
+      </div>
+    </a>
+
+    <a href="manage_polls.html" class="cta-banner">
+      <div class="cta-banner-icon">📊</div>
+      <div class="cta-banner-text">
+        <div class="cta-title" style="color:var(--admin)">Manage Polls</div>
+        <div class="cta-sub">Edit, delete and monitor active elections</div>
+      </div>
+    </a>
+
+    <!-- Info bar -->
+    <div class="info-bar" style="margin-top:16px">
+      <span class="info-bar-icon">ℹ️</span>
+      Admin actions are permanent. Deleted users and polls cannot be recovered.
+    </div>
+
+  </main>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script type="module">
+  import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, getDocs }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // 🔧 Replace with your Firebase project config
+  const firebaseConfig = {
+    apiKey:            "YOUR_API_KEY",
+    authDomain:        "YOUR_PROJECT.firebaseapp.com",
+    projectId:         "YOUR_PROJECT_ID",
+    storageBucket:     "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId:             "YOUR_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  const session = sessionStorage.getItem("adminSession");
+  if (!session) { window.location.href = "login.html"; }
+  else {
+    const admin = JSON.parse(session);
+    const displayName = admin.name || admin.mobile;
+    document.getElementById("admin-name-top").textContent    = displayName;
+    document.getElementById("admin-name-banner").textContent = displayName;
+    document.getElementById("admin-avatar").textContent      = displayName[0].toUpperCase();
+
+    // Use adminId stored at signup (e.g. AD847)
+    document.getElementById("admin-id-display").textContent = admin.adminId || "AD—";
+  }
+
+  async function loadCounts() {
+    try {
+      const [votersSnap, candSnap, pollsSnap] = await Promise.all([
+        getDocs(collection(db, "voters")),
+        getDocs(collection(db, "candidates")),
+        getDocs(collection(db, "polls"))
+      ]);
+
+      // Count blocked across both collections
+      let blockedCount = 0;
+      votersSnap.forEach(d => { if (d.data().blocked) blockedCount++; });
+      candSnap.forEach(d =>   { if (d.data().blocked) blockedCount++; });
+
+      document.getElementById("count-voters").textContent     = votersSnap.size;
+      document.getElementById("count-candidates").textContent = candSnap.size;
+      document.getElementById("count-polls").textContent      = pollsSnap.size;
+      document.getElementById("count-blocked").textContent    = blockedCount;
+    } catch(e) {
+      console.error(e);
+    }
+  }
+  loadCounts();
+
+  document.addEventListener("contextmenu", e => e.preventDefault());
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "F12") e.preventDefault();
+  });
+</script>
+
+<script>
+function logout() {
+  sessionStorage.removeItem("adminSession");
+  window.location.href = "login.html";
+}
+window.logout = logout;
+</script>
+</body>
+</html>
