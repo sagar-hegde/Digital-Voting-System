@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DigiVote</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-straight/css/uicons-solid-straight.css">
+</head>
+<body>
+
+  <!-- Background grid -->
+  <div class="bg-grid"></div> 
+  <div class="bg-glow"></div>
+
+  <!-- NAV -->
+  <nav class="navbar">
+    <div class="nav-logo">
+      <span class="logo-icon"><i class="fi fi-ss-vote-yea"></i></span>
+      <span>DigiVote</span>
+    </div>
+    <div class="nav-badge">Election 2026</div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-tag">Transparent · Secure · Verified</div>
+    <h1 class="hero-title">
+      Your Vote<br/>
+      <span class="accent">Your Power</span>
+    </h1>
+    <p class="hero-sub">
+      A secure web-based electronic voting system designed to facilitate transparent, efficient and reliable elections.<br/>
+      Select your role to get started.
+    </p>
+  </header>
+
+  <!-- ROLE CARDS -->
+  <main class="roles-section">
+    <div class="roles-grid">
+
+      <!-- VOTER -->
+      <div class="role-card" id="card-voter">
+        <div class="card-number">01</div>
+        <div class="card-icon">🗳️</div>
+        <h2 class="card-title">Voter</h2>
+        <p class="card-desc">Cast your vote securely. Verify your ballot. Make your voice count in the democratic process.</p>
+        <ul class="card-features">
+          <li>Verified identity login</li>
+          <li>Single-vote enforcement</li>
+          <li>Real-time confirmation</li>
+        </ul>
+        <a href="voter/login.html" class="card-btn btn-voter">
+          Enter as Voter <span class="btn-arrow">→</span>
+        </a>
+      </div>
+
+      <!-- CANDIDATE -->
+      <div class="role-card featured" id="card-candidate">
+        <div class="featured-badge">Running for Office</div>
+        <div class="card-number">02</div>
+        <div class="card-icon">🏛️</div>
+        <h2 class="card-title">Candidate</h2>
+        <p class="card-desc">Register your candidacy, manage your profile, and track your campaign results live.</p>
+        <ul class="card-features">
+          <li>Profile registration</li>
+          <li>Live vote tally</li>
+          <li>Campaign dashboard</li>
+        </ul>
+        <a href="candidate/login.html" class="card-btn btn-candidate">
+          Enter as Candidate <span class="btn-arrow">→</span>
+        </a>
+      </div>
+
+      <!-- ADMIN -->
+      <div class="role-card" id="card-admin">
+        <div class="card-number">03</div>
+        <div class="card-icon">🛡️</div>
+        <h2 class="card-title">Admin</h2>
+        <p class="card-desc">Oversee the election process, manage voters and candidates, and publish results.</p><br>
+        <ul class="card-features">
+          <li>Election management</li>
+          <li>User verification</li>
+          <li>Audit & reports</li>
+        </ul>
+        <a href="admin/login.html" class="card-btn btn-admin">
+          Enter as Admin <span class="btn-arrow">→</span>
+        </a>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- STATS BAR -->
+  <section class="stats-bar">
+    <div class="stat">
+      <span class="stat-num" data-target="54">0</span>
+      <span class="stat-label">Registered Voters</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-num" data-target="3">0</span>
+      <span class="stat-label">Candidates</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-num" data-target="99">0</span><span class="stat-suffix">%</span>
+      <span class="stat-label">Uptime</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-num" data-target="256">0</span><span class="stat-suffix">-bit</span>
+      <span class="stat-label">Encryption</span>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <p>© 2026 DigiVote. Built for secure democratic participation.</p>
+    <p class="footer-note">All votes are encrypted end-to-end. No data is sold or shared.</p>
+  </footer>
+
+  <script src="firebase.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
