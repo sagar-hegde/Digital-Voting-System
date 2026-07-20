@@ -33,24 +33,6 @@ The system is designed to handle **multiple user roles**, enforce **data integri
 * **Candidate** → Create & manage polls
 * **Admin** → Full system governance
 
-### 🗳️ Voting System
-
-* Vote only on **scheduled poll dates**
-* One vote per user per poll
-* Real-time vote storage using Firebase
-
-### 📊 Poll Management
-
-* Create, edit, delete polls
-* Dynamic poll visibility
-* Candidate-driven poll creation
-
-### 🛠️ Admin Dashboard
-
-* Manage voters & candidates
-* Monitor and control polls
-* Maintain system integrity
-
 ---
 
 ## ⚙️ Core Functionalities
