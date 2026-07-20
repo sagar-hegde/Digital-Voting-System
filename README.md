@@ -12,7 +12,7 @@
 
 ## 📌 Overview
 
-**DigiVote (Digital-Voting-System)** is a full-stack web application that enables seamless digital voting with **real-time data handling**, **secure authentication**, and **role-based system control**.
+**DigiVote (Digital Voting System)** is a full-stack web application that enables seamless digital voting with **real-time data handling**, **secure authentication**, and **role-based system control**.
 
 The system is designed to handle **multiple user roles**, enforce **data integrity**, and ensure **fair voting practices** using structured backend logic.
 
